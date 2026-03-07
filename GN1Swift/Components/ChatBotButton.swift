@@ -7,16 +7,17 @@
 
 import SwiftUI
 
+
 struct ChatBotButton: View {
-    
+
+    var action: () -> Void
+
     var body: some View {
-        
-        Button {
-            print("Chatbot tapped")
-        } label: {
-            
-            Image(systemName: "sparkles")
-                .font(.system(size: 22))
+
+        Button(action: action) {
+
+            Image(systemName: "message.fill")
+                .font(.title2)
                 .foregroundColor(.white)
                 .frame(width: 60, height: 60)
                 .background(Color.primaryBrand)
