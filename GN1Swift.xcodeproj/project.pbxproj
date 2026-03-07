@@ -6,14 +6,32 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		C0D081D32F5BBC6300891027 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = C0D081D22F5BBC5800891027 /* .gitignore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
-		DCAB6DB02F56A8D900CC52CB /* GN1-Swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GN1-Swift.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0D081D22F5BBC5800891027 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		DCAB6DB02F56A8D900CC52CB /* GN1Swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GN1Swift.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		C095199F2F5BA2E3008FECEC /* Exceptions for "GN1Swift" folder in "GN1Swift" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DCAB6DAF2F56A8D900CC52CB /* GN1Swift */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		DCAB6DB22F56A8D900CC52CB /* GN1-Swift */ = {
+		DCAB6DB22F56A8D900CC52CB /* GN1Swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "GN1-Swift";
+			exceptions = (
+				C095199F2F5BA2E3008FECEC /* Exceptions for "GN1Swift" folder in "GN1Swift" target */,
+			);
+			path = GN1Swift;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +50,8 @@
 		DCAB6DA72F56A8D900CC52CB = {
 			isa = PBXGroup;
 			children = (
-				DCAB6DB22F56A8D900CC52CB /* GN1-Swift */,
+				C0D081D22F5BBC5800891027 /* .gitignore */,
+				DCAB6DB22F56A8D900CC52CB /* GN1Swift */,
 				DCAB6DB12F56A8D900CC52CB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +59,7 @@
 		DCAB6DB12F56A8D900CC52CB /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				DCAB6DB02F56A8D900CC52CB /* GN1-Swift.app */,
+				DCAB6DB02F56A8D900CC52CB /* GN1Swift.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +67,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		DCAB6DAF2F56A8D900CC52CB /* GN1-Swift */ = {
+		DCAB6DAF2F56A8D900CC52CB /* GN1Swift */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = DCAB6DBB2F56A8DC00CC52CB /* Build configuration list for PBXNativeTarget "GN1-Swift" */;
+			buildConfigurationList = DCAB6DBB2F56A8DC00CC52CB /* Build configuration list for PBXNativeTarget "GN1Swift" */;
 			buildPhases = (
 				DCAB6DAC2F56A8D900CC52CB /* Sources */,
 				DCAB6DAD2F56A8D900CC52CB /* Frameworks */,
@@ -61,13 +80,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				DCAB6DB22F56A8D900CC52CB /* GN1-Swift */,
+				DCAB6DB22F56A8D900CC52CB /* GN1Swift */,
 			);
-			name = "GN1-Swift";
+			name = GN1Swift;
 			packageProductDependencies = (
 			);
 			productName = "GN1-Swift";
-			productReference = DCAB6DB02F56A8D900CC52CB /* GN1-Swift.app */;
+			productReference = DCAB6DB02F56A8D900CC52CB /* GN1Swift.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -85,7 +104,7 @@
 					};
 				};
 			};
-			buildConfigurationList = DCAB6DAB2F56A8D900CC52CB /* Build configuration list for PBXProject "	" */;
+			buildConfigurationList = DCAB6DAB2F56A8D900CC52CB /* Build configuration list for PBXProject "GN1Swift" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,7 +118,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				DCAB6DAF2F56A8D900CC52CB /* GN1-Swift */,
+				DCAB6DAF2F56A8D900CC52CB /* GN1Swift */,
 			);
 		};
 /* End PBXProject section */
@@ -109,6 +128,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0D081D32F5BBC6300891027 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -251,8 +271,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P3JRFAS7LF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GN1Swift/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -282,8 +304,10 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P3JRFAS7LF;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = GN1Swift/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -309,7 +333,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		DCAB6DAB2F56A8D900CC52CB /* Build configuration list for PBXProject "	" */ = {
+		DCAB6DAB2F56A8D900CC52CB /* Build configuration list for PBXProject "GN1Swift" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				DCAB6DB92F56A8DC00CC52CB /* Debug */,
@@ -318,7 +342,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		DCAB6DBB2F56A8DC00CC52CB /* Build configuration list for PBXNativeTarget "GN1-Swift" */ = {
+		DCAB6DBB2F56A8DC00CC52CB /* Build configuration list for PBXNativeTarget "GN1Swift" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				DCAB6DBC2F56A8DC00CC52CB /* Debug */,
