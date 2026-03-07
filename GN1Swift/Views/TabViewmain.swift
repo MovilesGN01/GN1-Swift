@@ -2,6 +2,8 @@ import SwiftUI
 
 struct TabViewmain: View {
 
+    @State private var showChat = false
+
     var body: some View {
 
         ZStack {
@@ -34,12 +36,17 @@ struct TabViewmain: View {
             }
             .tint(.primaryBrand)
 
-            ChatBotButton()
-                .padding(.trailing, 20)
-                .padding(.bottom, 80)
-                .frame(maxWidth: .infinity,
-                       maxHeight: .infinity,
-                       alignment: .bottomTrailing)
+            ChatBotButton {
+                showChat = true
+            }
+            .padding(.trailing, 20)
+            .padding(.bottom, 80)
+            .frame(maxWidth: .infinity,
+                   maxHeight: .infinity,
+                   alignment: .bottomTrailing)
+        }
+        .sheet(isPresented: $showChat) {
+            ChatView()
         }
         .ignoresSafeArea(.keyboard)
     }

@@ -16,7 +16,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		C095199F2F5BA2E3008FECEC /* Exceptions for "GN1Swift" folder in "GN1Swift" target */ = {
+		C0D082BA2F5BD54D00891027 /* Exceptions for "GN1Swift" folder in "GN1Swift" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -29,7 +29,7 @@
 		DCAB6DB22F56A8D900CC52CB /* GN1Swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				C095199F2F5BA2E3008FECEC /* Exceptions for "GN1Swift" folder in "GN1Swift" target */,
+				C0D082BA2F5BD54D00891027 /* Exceptions for "GN1Swift" folder in "GN1Swift" target */,
 			);
 			path = GN1Swift;
 			sourceTree = "<group>";
