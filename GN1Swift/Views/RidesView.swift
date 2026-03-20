@@ -405,4 +405,4 @@ private struct RideItem: Identifiable {
 #Preview {
     RidesView(selectedTab: .constant(1))
     }
-}
+
