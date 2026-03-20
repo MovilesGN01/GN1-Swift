@@ -112,7 +112,8 @@ final class OpenWeatherMapService {
     }
 
     private func apiKeyFromPlist() -> String {
-        (Bundle.main.object(forInfoDictionaryKey: "OPENWEATHER_API_KEY") as? String) ?? ""
+        ((Bundle.main.object(forInfoDictionaryKey: "OPENWEATHER_API_KEY") as? String) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
