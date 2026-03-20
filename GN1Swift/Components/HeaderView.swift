@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct HeaderView: View {
+    let weather: WeatherSnapshot
     
     var body: some View {
         HStack {
@@ -39,7 +40,7 @@ struct HeaderView: View {
             
             Spacer()
             
-            WeatherBadge()
+            WeatherBadge(weather: weather)
             
             Image(systemName: "bell")
                 .font(.title3)
