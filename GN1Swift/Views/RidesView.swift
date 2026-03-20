@@ -58,42 +58,47 @@ struct RidesView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            ridesAppBar
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    searchSummaryCard
-                        .padding(.horizontal, 16)
-                        .padding(.top, 8)
-
-                    filterChipsRow
-                        .padding(.top, 12)
-
-                    Text("RECOMMENDED RIDES")
-                        .font(.custom("Poppins-SemiBold", size: 11))
-                        .tracking(0.8)
-                        .foregroundColor(.placeholderMuted)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 12)
-                        .padding(.bottom, 6)
-
-                    VStack(spacing: 8) {
-                        ForEach(rides) { ride in
-                            rideCard(ride: ride)
+        NavigationStack {
+            VStack(spacing: 0) {
+                ridesAppBar
+                
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        searchSummaryCard
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
+                        
+                        filterChipsRow
+                            .padding(.top, 12)
+                        
+                        Text("RECOMMENDED RIDES")
+                            .font(.custom("Poppins-SemiBold", size: 11))
+                            .tracking(0.8)
+                            .foregroundColor(.placeholderMuted)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 12)
+                            .padding(.bottom, 6)
+                        
+                        VStack(spacing: 8) {
+                            ForEach(rides) { ride in
+                                NavigationLink(destination: RideDetailView(ride: ride)) {
+                                    rideCard(ride: ride)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                            }
                         }
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 16)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 16)
                 }
+                .background(Color.backgroundApp)
             }
             .background(Color.backgroundApp)
-        }
-        .background(Color.backgroundApp)
-        .alert("Ride Reserved", isPresented: $showReserveAlert) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("Ride reserved with \(reservedDriverName)!")
+            .alert("Ride Reserved", isPresented: $showReserveAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Ride reserved with \(reservedDriverName)!")
+            }
         }
     }
 
@@ -388,7 +393,7 @@ private enum RidesPalette {
     static let warningAmber = Color(hex: "#F59E0B")
 }
 
-private struct RideItem: Identifiable {
+struct RideItem: Identifiable {
     let id = UUID()
     let name: String
     let initial: String
@@ -405,4 +410,3 @@ private struct RideItem: Identifiable {
 #Preview {
     RidesView(selectedTab: .constant(1))
     }
-
