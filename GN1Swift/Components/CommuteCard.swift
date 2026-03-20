@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct CommuteCard: View {
+    let commuteForecastText: String
     
     var body: some View {
         VStack(spacing: 16) {
@@ -35,6 +36,11 @@ struct CommuteCard: View {
                 Text("7:00 – 7:45 AM")
                     .font(.custom("Poppins-SemiBold", size: 16))
             }
+
+            Text(commuteForecastText)
+                .font(.custom("Poppins-Regular", size: 12))
+                .foregroundColor(.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
             
             Button {
                 
