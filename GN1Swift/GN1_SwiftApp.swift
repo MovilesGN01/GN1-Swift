@@ -1,14 +1,13 @@
-//
-//  GN1_SwiftApp.swift
-//  GN1-Swift
-//
-//  Created by Camilo Sanchez Novoa on 2/03/26.
-//
-
 import SwiftUI
+import FirebaseCore
 
 @main
 struct GN1_SwiftApp: App {
+    
+    init() {
+        FirebaseApp.configure()
+    }
+    
     @State private var isLoggedIn = false
 
     var body: some Scene {

@@ -8,6 +8,10 @@ struct LoginView: View {
     @State private var password = ""
     @State private var isPasswordVisible = false
     @State private var showInvalidEmailAlert = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
+    
+    @State private var goToRegister = false
 
     private let institutionalDomain = "@uniandes.edu.co"
 
@@ -58,6 +62,7 @@ struct LoginView: View {
                         }
 
                         Button {
+                            goToRegister = true
                         } label: {
                             Text("Sign Up")
                                 .font(.custom("Poppins-SemiBold", size: 16))
@@ -76,10 +81,18 @@ struct LoginView: View {
                 .padding(.vertical, 24)
             }
             .background(Color.backgroundApp)
+            .navigationDestination(isPresented: $goToRegister) {
+                RegisterDetailsView(isLoggedIn: $isLoggedIn)
+            }
             .alert("Invalid email", isPresented: $showInvalidEmailAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
                 Text("You must use your institutional email @uniandes.edu.co")
+            }
+            .alert("Error", isPresented: $showErrorAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
             }
         }
     }
@@ -158,6 +171,7 @@ struct LoginView: View {
         .cornerRadius(12)
     }
 
+    // LOGIN → Firebase Auth
     private func login() {
         let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 
@@ -166,10 +180,35 @@ struct LoginView: View {
             return
         }
 
-        isLoggedIn = true
+        AuthService.shared.login(email: normalizedEmail, password: password) { userId in
+            
+            DispatchQueue.main.async {
+                
+                if let userId = userId {
+                    
+                    // Guardar sesión básica
+                    UserSession.shared.userId = userId
+                    UserSession.shared.email = normalizedEmail
+                    
+                    // Cargar datos del usuario desde Firestore
+                    FirestoreService.shared.loadUser(userId: userId) { success in
+                        
+                        DispatchQueue.main.async {
+                            if success {
+                                isLoggedIn = true
+                            } else {
+                                errorMessage = "Could not load user profile"
+                                showErrorAlert = true
+                            }
+                        }
+                    }
+                    
+                } else {
+                    errorMessage = "Login failed"
+                    showErrorAlert = true
+                }
+            }
+        }
     }
-}
-
-#Preview {
-    LoginView(isLoggedIn: .constant(false))
+    
 }

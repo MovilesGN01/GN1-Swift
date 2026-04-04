@@ -8,10 +8,16 @@
 
 /* Begin PBXBuildFile section */
 		C0D081D32F5BBC6300891027 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = C0D081D22F5BBC5800891027 /* .gitignore */; };
+		C0D0845F2F801B8100891027 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = C0D0845E2F801B8100891027 /* GoogleService-Info.plist */; };
+		C0D084622F801C4D00891027 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = C0D084612F801C4D00891027 /* FirebaseAuth */; };
+		C0D084642F801C5700891027 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = C0D084632F801C5700891027 /* FirebaseFirestore */; };
+		C0D084662F801C6900891027 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = C0D084652F801C6900891027 /* FirebaseFunctions */; };
+		C0D084682F801C7300891027 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = C0D084672F801C7300891027 /* FirebaseCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		C0D081D22F5BBC5800891027 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		C0D0845E2F801B8100891027 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		DCAB6DB02F56A8D900CC52CB /* GN1Swift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GN1Swift.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -41,18 +47,31 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0D084662F801C6900891027 /* FirebaseFunctions in Frameworks */,
+				C0D084622F801C4D00891027 /* FirebaseAuth in Frameworks */,
+				C0D084682F801C7300891027 /* FirebaseCore in Frameworks */,
+				C0D084642F801C5700891027 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		C0D084602F801C4D00891027 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		DCAB6DA72F56A8D900CC52CB = {
 			isa = PBXGroup;
 			children = (
 				C0D081D22F5BBC5800891027 /* .gitignore */,
 				DCAB6DB22F56A8D900CC52CB /* GN1Swift */,
 				DCAB6DB12F56A8D900CC52CB /* Products */,
+				C0D0845E2F801B8100891027 /* GoogleService-Info.plist */,
+				C0D084602F801C4D00891027 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -84,6 +103,10 @@
 			);
 			name = GN1Swift;
 			packageProductDependencies = (
+				C0D084612F801C4D00891027 /* FirebaseAuth */,
+				C0D084632F801C5700891027 /* FirebaseFirestore */,
+				C0D084652F801C6900891027 /* FirebaseFunctions */,
+				C0D084672F801C7300891027 /* FirebaseCore */,
 			);
 			productName = "GN1-Swift";
 			productReference = DCAB6DB02F56A8D900CC52CB /* GN1Swift.app */;
@@ -113,6 +136,9 @@
 			);
 			mainGroup = DCAB6DA72F56A8D900CC52CB;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C0D0845B2F8017B000891027 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DCAB6DB12F56A8D900CC52CB /* Products */;
 			projectDirPath = "";
@@ -129,6 +155,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C0D081D32F5BBC6300891027 /* .gitignore in Resources */,
+				C0D0845F2F801B8100891027 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -275,12 +302,12 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GN1Swift/Info.plist;
+				INFOPLIST_KEY_NFCReaderUsageDescription = "This app uses NFC to verify your university ID and allow ride check-in.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -309,12 +336,12 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GN1Swift/Info.plist;
+				INFOPLIST_KEY_NFCReaderUsageDescription = "This app uses NFC to verify your university ID and allow ride check-in.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -354,6 +381,40 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		C0D0845B2F8017B000891027 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.11.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C0D084612F801C4D00891027 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0D0845B2F8017B000891027 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		C0D084632F801C5700891027 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0D0845B2F8017B000891027 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+		C0D084652F801C6900891027 /* FirebaseFunctions */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0D0845B2F8017B000891027 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFunctions;
+		};
+		C0D084672F801C7300891027 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0D0845B2F8017B000891027 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = DCAB6DA82F56A8D900CC52CB /* Project object */;
 }
