@@ -1,51 +1,32 @@
 import Foundation
 import Combine
 import FirebaseAuth
-import FirebaseFirestore
 
 class RecommendationsViewModel: ObservableObject {
     @Published var recommendedRides: [Ride] = []
     @Published var isLoading = false
 
-    private let db = Firestore.firestore()
-
     func loadRecommendations() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         isLoading = true
+        recommendedRides = []
 
-        db.collection("user_analytics").document(userId).getDocument { [weak self] snapshot, _ in
-            guard let self = self,
-                  let rideIds = snapshot?.data()?["recommendedRides"] as? [String],
-                  !rideIds.isEmpty else {
+        // Step 1: refresh analytics so the recommendedRides array is up to date
+        CloudFunctionsService.shared.updateUserAnalytics { [weak self] in
+            // Step 2: read the ride IDs from user_analytics and fetch each ride
+            FirestoreService.shared.fetchRecommendedRides(userId: userId) { rides in
                 DispatchQueue.main.async {
-                    self?.recommendedRides = []
+                    print("[Recommendations] received: \(rides.count)")
+                    for r in rides {
+                        print("[Recommendations] id:\(r.id) status:'\(r.status)' \(r.origin)→\(r.destination)")
+                    }
+                    // Show everything except rides that are definitively over
+                    self?.recommendedRides = rides.filter {
+                        $0.status != "completed" && $0.status != "in_progress"
+                    }
                     self?.isLoading = false
                 }
-                return
             }
-            self.fetchRides(rideIds: rideIds)
-        }
-    }
-
-    private func fetchRides(rideIds: [String]) {
-        var rides: [Ride] = []
-        let group = DispatchGroup()
-
-        for rideId in rideIds {
-            group.enter()
-            db.collection("rides").document(rideId).getDocument { snap, _ in
-                if let snap = snap, let data = snap.data() {
-                    var d = data
-                    d["id"] = snap.documentID
-                    rides.append(Ride(from: d))
-                }
-                group.leave()
-            }
-        }
-
-        group.notify(queue: .main) { [weak self] in
-            self?.recommendedRides = rides
-            self?.isLoading = false
         }
     }
 }

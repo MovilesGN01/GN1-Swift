@@ -11,7 +11,7 @@ struct RecommendationsView: View {
                 content
             }
             .background(Color.backgroundApp)
-            .task { viewModel.loadRecommendations() }
+            .onAppear { viewModel.loadRecommendations() }
         }
     }
 

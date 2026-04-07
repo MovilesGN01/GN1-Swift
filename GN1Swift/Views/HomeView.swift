@@ -6,7 +6,8 @@ struct HomeView: View {
         conditionText: "Loading",
         conditionSymbol: "cloud.sun.fill"
     )
-    
+    @State private var weatherCondition = ""
+
     @State private var commuteForecastText = "Tomorrow 7:00-7:45 AM: Loading forecast..."
     @State private var didLoadWeather = false
     @State private var userName = "User"
@@ -20,7 +21,9 @@ struct HomeView: View {
                         weather: weatherSnapshot,
                         userName: userName
                     )
-                    
+
+                    WeatherContextBanner(condition: weatherCondition)
+
                     Text("Plan Your Commute")
                         .font(.custom("Poppins-Bold", size: 22))
                         .foregroundColor(.textPrimary)
@@ -97,13 +100,28 @@ struct HomeView: View {
             FirestoreService.shared.loadWeather { data in
                 DispatchQueue.main.async {
                     if let w = data {
+                        let symbol: String
+                        switch w.weather {
+                        case "Rain":   symbol = "cloud.rain.fill"
+                        case "Cloudy": symbol = "cloud.fill"
+                        default:       symbol = "sun.max.fill"
+                        }
+
+                        weatherCondition = w.weather
                         weatherSnapshot = WeatherSnapshot(
                             temperatureText: "\(Int(w.temperature))°C",
                             conditionText: w.weather,
-                            conditionSymbol: w.weather == "Rain" ? "cloud.rain.fill" : "cloud.sun.fill"
+                            conditionSymbol: symbol
                         )
-                        
-                        commuteForecastText = "Demand is \(w.demandLevel). Estimated wait: \(w.estimatedWaitTime) min."
+
+                        switch w.weather {
+                        case "Rain":
+                            commuteForecastText = "Due to rain, expect higher demand during your commute window."
+                        case "Cloudy":
+                            commuteForecastText = "Cloudy conditions. Rides should be available during your window."
+                        default:
+                            commuteForecastText = "Clear skies. Normal ride availability expected."
+                        }
                     } else {
                         commuteForecastText = "Weather data unavailable."
                     }

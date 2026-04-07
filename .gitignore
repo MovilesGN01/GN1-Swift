@@ -21,3 +21,4 @@ build/
 GoogleService-Info.plist
 requestRide.cf.js
 rides.cf.js
+.DS_Store

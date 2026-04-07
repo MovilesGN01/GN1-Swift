@@ -103,9 +103,10 @@ struct MyRequestsSectionView: View {
 
     private func statusInfo(_ status: String) -> (String, Color) {
         switch status {
-        case "accepted": return ("Accepted", .green)
-        case "rejected": return ("Rejected", .red)
-        default: return ("Pending", .orange)
+        case "accepted":  return ("Accepted", .green)
+        case "rejected":  return ("Rejected", .red)
+        case "completed": return ("Completed", .blue)
+        default:          return ("Pending", .orange)
         }
     }
 
@@ -113,9 +114,10 @@ struct MyRequestsSectionView: View {
 
     private func statusIcon(_ status: String) -> String {
         switch status {
-        case "accepted": return "checkmark.circle.fill"
-        case "rejected": return "xmark.circle.fill"
-        default: return "clock.fill"
+        case "accepted":  return "checkmark.circle.fill"
+        case "rejected":  return "xmark.circle.fill"
+        case "completed": return "flag.checkered"
+        default:          return "clock.fill"
         }
     }
 }

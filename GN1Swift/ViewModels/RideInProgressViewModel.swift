@@ -46,7 +46,9 @@ class RideInProgressViewModel: ObservableObject {
                 }
                 return
             }
-            // Step 2: update analytics so getRideRecommendations has fresh data
+            // Write status directly so passenger listener always picks it up
+            FirestoreService.shared.markRideRequestsCompleted(rideId: self.ride.id)
+            // Update analytics so getRideRecommendations has fresh data
             CloudFunctionsService.shared.updateUserAnalytics {
                 DispatchQueue.main.async {
                     self.isFinishing = false

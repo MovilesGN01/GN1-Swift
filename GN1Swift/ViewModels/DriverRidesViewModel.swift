@@ -45,12 +45,19 @@ class DriverRidesViewModel: ObservableObject {
 
     // MARK: - Actions
 
-    /// Accepts the request: sets status = "accepted" and decrements seats (handled by CF).
+    /// Accepts the request: calls CF then writes status directly to Firestore as a fallback.
     func accept(_ request: RideRequest) {
-        CloudFunctionsService.shared.acceptRide(requestId: request.id) { _ in }
+        CloudFunctionsService.shared.acceptRide(requestId: request.id) { success in
+            print("[DriverVM] acceptRide CF success: \(success)")
+            // Write directly so the passenger listener always sees the update
+            FirestoreService.shared.updateRequestStatus(requestId: request.id, status: "accepted")
+        }
     }
 
     func reject(_ request: RideRequest) {
-        CloudFunctionsService.shared.rejectRide(requestId: request.id) { _ in }
+        CloudFunctionsService.shared.rejectRide(requestId: request.id) { success in
+            print("[DriverVM] rejectRide CF success: \(success)")
+            FirestoreService.shared.updateRequestStatus(requestId: request.id, status: "rejected")
+        }
     }
 }

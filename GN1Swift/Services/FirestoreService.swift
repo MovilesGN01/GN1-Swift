@@ -93,6 +93,38 @@ class FirestoreService {
         }
     }
 
+    /// Directly sets a single rideRequest's status (fallback for when CF doesn't update it).
+    func updateRequestStatus(requestId: String, status: String) {
+        db.collection("rideRequests").document(requestId).updateData(["status": status]) { error in
+            if let error = error {
+                print("[Firestore] updateRequestStatus error:", error.localizedDescription)
+            } else {
+                print("[Firestore] Request \(requestId) → \(status)")
+            }
+        }
+    }
+
+    /// Marks ALL rideRequests for a given ride as "completed".
+    func markRideRequestsCompleted(rideId: String) {
+        db.collection("rideRequests")
+            .whereField("rideId", isEqualTo: rideId)
+            .getDocuments { snapshot, error in
+                guard let docs = snapshot?.documents else {
+                    print("[Firestore] markRideRequestsCompleted: no docs for ride \(rideId)", error?.localizedDescription ?? "")
+                    return
+                }
+                for doc in docs {
+                    doc.reference.updateData(["status": "completed"]) { err in
+                        if let err = err {
+                            print("[Firestore] markRideRequestsCompleted error on \(doc.documentID):", err.localizedDescription)
+                        } else {
+                            print("[Firestore] Request \(doc.documentID) → completed")
+                        }
+                    }
+                }
+            }
+    }
+
     /// One-shot check: does a non-rejected request exist for this ride + passenger?
     func hasExistingRequest(rideId: String, passengerId: String,
                             completion: @escaping (Bool) -> Void) {
