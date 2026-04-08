@@ -39,7 +39,8 @@ class PassengerRidesViewModel: ObservableObject {
         CloudFunctionsService.shared.getRecommendedRides { [weak self] rides in
             DispatchQueue.main.async {
                 guard let self = self else { return }
-                self.recommendedRides = rides.filter { $0.driverId != self.currentUserId }
+                let filtered = rides.filter { $0.driverId != self.currentUserId }
+                self.recommendedRides = RideRankingService.rank(filtered)
                 group.leave()
             }
         }
@@ -58,7 +59,7 @@ class PassengerRidesViewModel: ObservableObject {
             result = result.filter { $0.driverRating >= minRating }
         }
         result = result.filter { $0.seatsAvailable >= minSeats }
-        filteredRides = result
+        filteredRides = RideRankingService.rank(result)
     }
 
     func applyFilters() { filterRides() }

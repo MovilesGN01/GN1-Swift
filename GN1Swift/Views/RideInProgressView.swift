@@ -1,4 +1,5 @@
 import SwiftUI
+import MapKit
 
 struct RideInProgressView: View {
     @StateObject private var viewModel: RideInProgressViewModel
@@ -14,6 +15,11 @@ struct RideInProgressView: View {
         VStack(spacing: 0) {
             appBar
 
+            Map {
+                UserAnnotation()
+            }
+            .frame(height: 200)
+
             ScrollView {
                 VStack(spacing: 16) {
                     statusBanner
@@ -28,7 +34,10 @@ struct RideInProgressView: View {
         }
         .background(Color.backgroundApp)
         .navigationBarHidden(true)
-        .onAppear { viewModel.startListening() }
+        .onAppear {
+            viewModel.startListening()
+            LocationService.shared.requestPermissionAndStart()
+        }
         .onDisappear { viewModel.stopListeningNow() }
         .alert("Error", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
