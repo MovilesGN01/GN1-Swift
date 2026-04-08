@@ -55,6 +55,28 @@ final class AppFacade: AppFacadeType {
         cloudFunctionsService.requestRide(rideId: rideId, completion: completion)
     }
 
+    func createRide(
+        origin: String,
+        destination: String,
+        zone: String,
+        departureTime: Date,
+        seatsAvailable: Int,
+        completion: @escaping (String?) -> Void
+    ) {
+        cloudFunctionsService.createRide(
+            origin: origin,
+            destination: destination,
+            zone: zone,
+            departureTime: departureTime,
+            seatsAvailable: seatsAvailable,
+            completion: completion
+        )
+    }
+
+    func hasExistingRequest(rideId: String, passengerId: String, completion: @escaping (Bool) -> Void) {
+        firestoreService.hasExistingRequest(rideId: rideId, passengerId: passengerId, completion: completion)
+    }
+
     func listenToDriverRides(driverId: String, completion: @escaping ([Ride]) -> Void) -> (() -> Void) {
         firestoreService.listenToDriverRides(driverId: driverId, completion: completion)
     }

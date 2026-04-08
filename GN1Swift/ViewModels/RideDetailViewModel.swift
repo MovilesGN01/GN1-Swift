@@ -8,15 +8,17 @@ class RideDetailViewModel: ObservableObject {
     @Published var errorMessage: String?
 
     let ride: Ride
+    private let facade: AppFacadeType
 
-    init(ride: Ride) {
+    init(ride: Ride, facade: AppFacadeType = AppFacade.shared) {
         self.ride = ride
+        self.facade = facade
     }
 
     /// Call from onAppear to pre-disable the button if the user already requested this ride.
     func checkExistingRequest() {
         guard let userId = UserSession.shared.userId else { return }
-        FirestoreService.shared.hasExistingRequest(rideId: ride.id, passengerId: userId) { [weak self] exists in
+        facade.hasExistingRequest(rideId: ride.id, passengerId: userId) { [weak self] exists in
             DispatchQueue.main.async {
                 if exists { self?.alreadyRequested = true }
             }
@@ -25,7 +27,7 @@ class RideDetailViewModel: ObservableObject {
 
     func requestRide() {
         isRequesting = true
-        CloudFunctionsService.shared.requestRide(rideId: ride.id) { [weak self] result in
+        facade.requestRide(rideId: ride.id) { [weak self] result in
             DispatchQueue.main.async {
                 self?.isRequesting = false
                 switch result {

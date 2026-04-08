@@ -5,6 +5,15 @@ protocol AppFacadeType {
     func fetchAllAvailableRides(completion: @escaping ([Ride]) -> Void)
     func fetchRecommendedRides(completion: @escaping ([Ride]) -> Void)
     func requestRide(rideId: String, completion: @escaping (RequestRideResult) -> Void)
+    func createRide(
+        origin: String,
+        destination: String,
+        zone: String,
+        departureTime: Date,
+        seatsAvailable: Int,
+        completion: @escaping (String?) -> Void
+    )
+    func hasExistingRequest(rideId: String, passengerId: String, completion: @escaping (Bool) -> Void)
     func listenToDriverRides(driverId: String, completion: @escaping ([Ride]) -> Void) -> (() -> Void)
     func listenToDriverRequests(driverId: String, completion: @escaping ([RideRequest]) -> Void) -> (() -> Void)
     func listenToRideRequests(rideId: String, completion: @escaping ([RideRequest]) -> Void) -> (() -> Void)
