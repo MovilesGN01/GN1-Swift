@@ -3,6 +3,7 @@ import SwiftUI
 struct RegisterDetailsView: View {
     
     @Binding var isLoggedIn: Bool
+    private let facade: AppFacadeType
     
     @State private var name = ""
     @State private var universityId = ""
@@ -21,6 +22,11 @@ struct RegisterDetailsView: View {
     @State private var errorMessage = ""
     
     private let institutionalDomain = "@uniandes.edu.co"
+
+    init(isLoggedIn: Binding<Bool>, facade: AppFacadeType = AppFacade.shared) {
+        self._isLoggedIn = isLoggedIn
+        self.facade = facade
+    }
     
     var body: some View {
         NavigationStack {
@@ -105,34 +111,21 @@ struct RegisterDetailsView: View {
             return
         }
         
-        AuthService.shared.register(email: email, password: password) { userId in
-            
+        facade.registerUser(
+            name: name,
+            email: email,
+            password: password,
+            role: role,
+            carModel: carModel,
+            plate: plate,
+            seats: Int(seats)
+        ) { result in
             DispatchQueue.main.async {
-                if let userId = userId {
-                    
-                    // Guardar sesión
-                    UserSession.shared.userId = userId
-                    UserSession.shared.email = email
-                    UserSession.shared.name = name
-                    UserSession.shared.role = role
-                    UserSession.shared.carModel = carModel
-                    UserSession.shared.plate = plate
-                    UserSession.shared.seats = Int(seats)
-                    
-                    // Crear documento en Firestore (Cloud Function)
-                    CloudFunctionsService.shared.createUserDocument { success in
-                        DispatchQueue.main.async {
-                            if success {
-                                isLoggedIn = true
-                            } else {
-                                errorMessage = "Error creating user profile"
-                                showErrorAlert = true
-                            }
-                        }
-                    }
-                    
-                } else {
-                    errorMessage = "Error creating account"
+                switch result {
+                case .success:
+                    isLoggedIn = true
+                case .failure(let message):
+                    errorMessage = message
                     showErrorAlert = true
                 }
             }
