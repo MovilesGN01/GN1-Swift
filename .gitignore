@@ -17,3 +17,8 @@ build/
 
 # temporary files
 *.swp
+.DS_Store
+GoogleService-Info.plist
+requestRide.cf.js
+rides.cf.js
+.DS_Store
