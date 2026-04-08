@@ -6,17 +6,20 @@ final class AppFacade: AppFacadeType {
     private let authService: AuthService
     private let firestoreService: FirestoreService
     private let cloudFunctionsService: CloudFunctionsService
+    private let locationService: LocationService
     private let session: UserSession
 
     init(
         authService: AuthService = .shared,
         firestoreService: FirestoreService = .shared,
         cloudFunctionsService: CloudFunctionsService = .shared,
+        locationService: LocationService = .shared,
         session: UserSession = .shared
     ) {
         self.authService = authService
         self.firestoreService = firestoreService
         self.cloudFunctionsService = cloudFunctionsService
+        self.locationService = locationService
         self.session = session
     }
 
@@ -66,6 +69,11 @@ final class AppFacade: AppFacadeType {
         firestoreService.listenToRideRequests(rideId: rideId, completion: completion)
     }
 
+    func listenToAcceptedPassengers(rideId: String,
+                                    completion: @escaping ([RideRequest]) -> Void) -> (() -> Void) {
+        firestoreService.listenToAcceptedPassengers(rideId: rideId, completion: completion)
+    }
+
     func acceptRide(requestId: String, completion: @escaping (Bool) -> Void) {
         cloudFunctionsService.acceptRide(requestId: requestId, completion: completion)
     }
@@ -74,12 +82,28 @@ final class AppFacade: AppFacadeType {
         cloudFunctionsService.rejectRide(requestId: requestId, completion: completion)
     }
 
+    func finishRide(rideId: String, completion: @escaping (Bool) -> Void) {
+        cloudFunctionsService.finishRide(rideId: rideId, completion: completion)
+    }
+
+    func updateUserAnalytics(completion: @escaping () -> Void) {
+        cloudFunctionsService.updateUserAnalytics(completion: completion)
+    }
+
     func updateRequestStatus(requestId: String, status: String) {
         firestoreService.updateRequestStatus(requestId: requestId, status: status)
     }
 
+    func markRideRequestsCompleted(rideId: String) {
+        firestoreService.markRideRequestsCompleted(rideId: rideId)
+    }
+
     func fetchUserName(userId: String, completion: @escaping (String?) -> Void) {
         firestoreService.fetchUserName(userId: userId, completion: completion)
+    }
+
+    func requestLocationPermissionAndStart() {
+        locationService.requestPermissionAndStart()
     }
 
     func registerUser(

@@ -9,14 +9,16 @@ class RideInProgressViewModel: ObservableObject {
 
     let ride: Ride
 
+    private let facade: AppFacadeType
     private var stopListening: (() -> Void)?
 
-    init(ride: Ride) {
+    init(ride: Ride, facade: AppFacadeType = AppFacade.shared) {
         self.ride = ride
+        self.facade = facade
     }
 
     func startListening() {
-        stopListening = FirestoreService.shared.listenToAcceptedPassengers(rideId: ride.id) { [weak self] passengers in
+        stopListening = facade.listenToAcceptedPassengers(rideId: ride.id) { [weak self] passengers in
             DispatchQueue.main.async {
                 self?.acceptedPassengers = passengers
             }
@@ -37,7 +39,7 @@ class RideInProgressViewModel: ObservableObject {
     /// 3. Calls completion so the view navigates home
     func finishRide(completion: @escaping () -> Void) {
         isFinishing = true
-        CloudFunctionsService.shared.finishRide(rideId: ride.id) { [weak self] success in
+        facade.finishRide(rideId: ride.id) { [weak self] success in
             guard let self = self else { return }
             guard success else {
                 DispatchQueue.main.async {
@@ -47,9 +49,9 @@ class RideInProgressViewModel: ObservableObject {
                 return
             }
             // Write status directly so passenger listener always picks it up
-            FirestoreService.shared.markRideRequestsCompleted(rideId: self.ride.id)
+            self.facade.markRideRequestsCompleted(rideId: self.ride.id)
             // Update analytics so getRideRecommendations has fresh data
-            CloudFunctionsService.shared.updateUserAnalytics {
+            self.facade.updateUserAnalytics {
                 DispatchQueue.main.async {
                     self.isFinishing = false
                     completion()
