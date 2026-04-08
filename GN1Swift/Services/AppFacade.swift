@@ -40,6 +40,48 @@ final class AppFacade: AppFacadeType {
         }
     }
 
+    func fetchAllAvailableRides(completion: @escaping ([Ride]) -> Void) {
+        cloudFunctionsService.getAllAvailableRides(completion: completion)
+    }
+
+    func fetchRecommendedRides(completion: @escaping ([Ride]) -> Void) {
+        cloudFunctionsService.getRecommendedRides(completion: completion)
+    }
+
+    func requestRide(rideId: String, completion: @escaping (RequestRideResult) -> Void) {
+        cloudFunctionsService.requestRide(rideId: rideId, completion: completion)
+    }
+
+    func listenToDriverRides(driverId: String, completion: @escaping ([Ride]) -> Void) -> (() -> Void) {
+        firestoreService.listenToDriverRides(driverId: driverId, completion: completion)
+    }
+
+    func listenToDriverRequests(driverId: String,
+                                completion: @escaping ([RideRequest]) -> Void) -> (() -> Void) {
+        firestoreService.listenToDriverRequests(driverId: driverId, completion: completion)
+    }
+
+    func listenToRideRequests(rideId: String,
+                              completion: @escaping ([RideRequest]) -> Void) -> (() -> Void) {
+        firestoreService.listenToRideRequests(rideId: rideId, completion: completion)
+    }
+
+    func acceptRide(requestId: String, completion: @escaping (Bool) -> Void) {
+        cloudFunctionsService.acceptRide(requestId: requestId, completion: completion)
+    }
+
+    func rejectRide(requestId: String, completion: @escaping (Bool) -> Void) {
+        cloudFunctionsService.rejectRide(requestId: requestId, completion: completion)
+    }
+
+    func updateRequestStatus(requestId: String, status: String) {
+        firestoreService.updateRequestStatus(requestId: requestId, status: status)
+    }
+
+    func fetchUserName(userId: String, completion: @escaping (String?) -> Void) {
+        firestoreService.fetchUserName(userId: userId, completion: completion)
+    }
+
     func registerUser(
         name: String,
         email: String,

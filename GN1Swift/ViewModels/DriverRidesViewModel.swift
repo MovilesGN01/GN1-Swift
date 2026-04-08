@@ -10,14 +10,19 @@ class DriverRidesViewModel: ObservableObject {
     @Published var isLoadingRides = false
     @Published var isLoadingRequests = false
 
+    private let facade: AppFacadeType
     private var stopRidesListening: (() -> Void)?
     private var stopRequestsListening: (() -> Void)?
+
+    init(facade: AppFacadeType = AppFacade.shared) {
+        self.facade = facade
+    }
 
     func startListening() {
         guard let userId = UserSession.shared.userId else { return }
 
         isLoadingRides = true
-        stopRidesListening = FirestoreService.shared.listenToDriverRides(driverId: userId) { [weak self] rides in
+        stopRidesListening = facade.listenToDriverRides(driverId: userId) { [weak self] rides in
             DispatchQueue.main.async {
                 self?.myRides = rides
                 self?.isLoadingRides = false
@@ -25,7 +30,7 @@ class DriverRidesViewModel: ObservableObject {
         }
 
         isLoadingRequests = true
-        stopRequestsListening = FirestoreService.shared.listenToDriverRequests(driverId: userId) { [weak self] reqs in
+        stopRequestsListening = facade.listenToDriverRequests(driverId: userId) { [weak self] reqs in
             DispatchQueue.main.async {
                 self?.requests = reqs
                 self?.isLoadingRequests = false
@@ -47,17 +52,17 @@ class DriverRidesViewModel: ObservableObject {
 
     /// Accepts the request: calls CF then writes status directly to Firestore as a fallback.
     func accept(_ request: RideRequest) {
-        CloudFunctionsService.shared.acceptRide(requestId: request.id) { success in
+        facade.acceptRide(requestId: request.id) { [weak self] success in
             print("[DriverVM] acceptRide CF success: \(success)")
             // Write directly so the passenger listener always sees the update
-            FirestoreService.shared.updateRequestStatus(requestId: request.id, status: "accepted")
+            self?.facade.updateRequestStatus(requestId: request.id, status: "accepted")
         }
     }
 
     func reject(_ request: RideRequest) {
-        CloudFunctionsService.shared.rejectRide(requestId: request.id) { success in
+        facade.rejectRide(requestId: request.id) { [weak self] success in
             print("[DriverVM] rejectRide CF success: \(success)")
-            FirestoreService.shared.updateRequestStatus(requestId: request.id, status: "rejected")
+            self?.facade.updateRequestStatus(requestId: request.id, status: "rejected")
         }
     }
 }
