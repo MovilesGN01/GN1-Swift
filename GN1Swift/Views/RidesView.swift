@@ -11,6 +11,7 @@ private enum RideMode: String, CaseIterable {
 
 struct RidesView: View {
     @Binding var selectedTab: Int
+    private let facade: AppFacadeType
 
     // Mode state — only meaningful when role == "both"
     @State private var mode: RideMode = .passenger
@@ -27,9 +28,9 @@ struct RidesView: View {
     @State private var reservedDriverName = ""
 
     // ViewModels
-    @StateObject private var passengerVM = PassengerRidesViewModel()
-    @StateObject private var myRequestsVM = MyRequestsViewModel()
-    @StateObject private var driverVM = DriverRidesViewModel()
+    @StateObject private var passengerVM: PassengerRidesViewModel
+    @StateObject private var myRequestsVM: MyRequestsViewModel
+    @StateObject private var driverVM: DriverRidesViewModel
 
     // Rating filter options for passenger mode
     private let ratingFilters: [(label: String, value: Double)] = [
@@ -37,6 +38,14 @@ struct RidesView: View {
     ]
 
     private var role: String { UserSession.shared.role ?? "passenger" }
+
+    init(selectedTab: Binding<Int>, facade: AppFacadeType = AppFacade.shared) {
+        self._selectedTab = selectedTab
+        self.facade = facade
+        _passengerVM = StateObject(wrappedValue: PassengerRidesViewModel(facade: facade))
+        _myRequestsVM = StateObject(wrappedValue: MyRequestsViewModel())
+        _driverVM = StateObject(wrappedValue: DriverRidesViewModel())
+    }
 
     /// Resolves the active mode taking user role into account.
     private var effectiveMode: RideMode {
@@ -362,7 +371,7 @@ struct RidesView: View {
             // Quick-reserve button (alternative to opening RideDetailView)
             let alreadyRequested = myRequestsVM.hasRequested(rideId: ride.id)
             Button {
-                CloudFunctionsService.shared.requestRide(rideId: ride.id) { result in
+                facade.requestRide(rideId: ride.id) { result in
                     switch result {
                     case .success:
                         reservedDriverName = ride.driverName

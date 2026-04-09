@@ -3,11 +3,13 @@ import MapKit
 
 struct RideInProgressView: View {
     @StateObject private var viewModel: RideInProgressViewModel
+    private let facade: AppFacadeType
     @Environment(\.dismiss) private var dismiss
     var onFinished: () -> Void
 
-    init(ride: Ride, onFinished: @escaping () -> Void) {
-        _viewModel = StateObject(wrappedValue: RideInProgressViewModel(ride: ride))
+    init(ride: Ride, onFinished: @escaping () -> Void, facade: AppFacadeType = AppFacade.shared) {
+        self.facade = facade
+        _viewModel = StateObject(wrappedValue: RideInProgressViewModel(ride: ride, facade: facade))
         self.onFinished = onFinished
     }
 
@@ -36,7 +38,7 @@ struct RideInProgressView: View {
         .navigationBarHidden(true)
         .onAppear {
             viewModel.startListening()
-            LocationService.shared.requestPermissionAndStart()
+            facade.requestLocationPermissionAndStart()
         }
         .onDisappear { viewModel.stopListeningNow() }
         .alert("Error", isPresented: Binding(

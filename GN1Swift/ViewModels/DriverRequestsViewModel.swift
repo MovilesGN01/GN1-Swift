@@ -5,11 +5,13 @@ class DriverRequestsViewModel: ObservableObject {
     @Published var requests: [RideRequest] = []
     @Published var isLoading = false
 
+    private let facade: AppFacadeType
     private var stopListening: (() -> Void)?
     private let rideId: String?
 
-    init(rideId: String? = nil) {
+    init(rideId: String? = nil, facade: AppFacadeType = AppFacade.shared) {
         self.rideId = rideId
+        self.facade = facade
     }
 
     func startListening() {
@@ -21,9 +23,9 @@ class DriverRequestsViewModel: ObservableObject {
         }
 
         if let rideId = rideId {
-            stopListening = FirestoreService.shared.listenToRideRequests(rideId: rideId, completion: handler)
+            stopListening = facade.listenToRideRequests(rideId: rideId, completion: handler)
         } else {
-            stopListening = FirestoreService.shared.listenToDriverRequests(driverId: userId, completion: handler)
+            stopListening = facade.listenToDriverRequests(driverId: userId, completion: handler)
         }
     }
 
@@ -39,14 +41,14 @@ class DriverRequestsViewModel: ObservableObject {
 
     /// Reject a passenger request.
     func reject(_ request: RideRequest) {
-        CloudFunctionsService.shared.rejectRide(requestId: request.id) { success in
+        facade.rejectRide(requestId: request.id) { success in
             if !success { print("Failed to reject request \(request.id)") }
         }
     }
 
     /// Accepts the request: sets status = "accepted" and decrements seats (handled by CF).
     func accept(_ request: RideRequest) {
-        CloudFunctionsService.shared.acceptRide(requestId: request.id) { _ in }
+        facade.acceptRide(requestId: request.id) { _ in }
     }
 
     // MARK: - Name Enrichment
@@ -70,7 +72,7 @@ class DriverRequestsViewModel: ObservableObject {
         for i in unknown {
             let passengerId = enriched[i].passengerId
             group.enter()
-            FirestoreService.shared.fetchUserName(userId: passengerId) { name in
+            facade.fetchUserName(userId: passengerId) { name in
                 if let name = name { enriched[i].passengerName = name }
                 group.leave()
             }

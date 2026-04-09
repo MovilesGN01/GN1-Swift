@@ -11,6 +11,12 @@ class CreateRideViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var createdRideId: String?
 
+    private let facade: AppFacadeType
+
+    init(facade: AppFacadeType = AppFacade.shared) {
+        self.facade = facade
+    }
+
     var isValid: Bool {
         !origin.trimmingCharacters(in: .whitespaces).isEmpty &&
         !destination.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -23,7 +29,7 @@ class CreateRideViewModel: ObservableObject {
             return
         }
         isLoading = true
-        CloudFunctionsService.shared.createRide(
+        facade.createRide(
             origin: origin,
             destination: destination,
             zone: zone,

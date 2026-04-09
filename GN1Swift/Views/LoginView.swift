@@ -3,6 +3,7 @@ import SwiftUI
 struct LoginView: View {
 
     @Binding var isLoggedIn: Bool
+    private let facade: AppFacadeType
 
     @State private var email = ""
     @State private var password = ""
@@ -14,6 +15,11 @@ struct LoginView: View {
     @State private var goToRegister = false
 
     private let institutionalDomain = "@uniandes.edu.co"
+
+    init(isLoggedIn: Binding<Bool>, facade: AppFacadeType = AppFacade.shared) {
+        self._isLoggedIn = isLoggedIn
+        self.facade = facade
+    }
 
     var body: some View {
         NavigationStack {
@@ -180,31 +186,13 @@ struct LoginView: View {
             return
         }
 
-        AuthService.shared.login(email: normalizedEmail, password: password) { userId in
-            
+        facade.signIn(email: normalizedEmail, password: password) { result in
             DispatchQueue.main.async {
-                
-                if let userId = userId {
-                    
-                    // Guardar sesión básica
-                    UserSession.shared.userId = userId
-                    UserSession.shared.email = normalizedEmail
-                    
-                    // Cargar datos del usuario desde Firestore
-                    FirestoreService.shared.loadUser(userId: userId) { success in
-                        
-                        DispatchQueue.main.async {
-                            if success {
-                                isLoggedIn = true
-                            } else {
-                                errorMessage = "Could not load user profile"
-                                showErrorAlert = true
-                            }
-                        }
-                    }
-                    
-                } else {
-                    errorMessage = "Login failed"
+                switch result {
+                case .success:
+                    isLoggedIn = true
+                case .failure(let message):
+                    errorMessage = message
                     showErrorAlert = true
                 }
             }
