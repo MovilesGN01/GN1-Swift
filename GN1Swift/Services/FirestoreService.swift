@@ -244,6 +244,34 @@ class FirestoreService {
         }
     }
 
+    // MARK: - Coordinates
+
+    func updateRideCoordinates(rideId: String,
+                               originLat: Double, originLng: Double,
+                               destinationLat: Double, destinationLng: Double) {
+        db.collection("rides").document(rideId).updateData([
+            "originLat": originLat,
+            "originLng": originLng,
+            "destinationLat": destinationLat,
+            "destinationLng": destinationLng
+        ]) { error in
+            if let error = error {
+                print("[Firestore] updateRideCoordinates error:", error.localizedDescription)
+            }
+        }
+    }
+
+    func updateUserLocation(userId: String, latitude: Double, longitude: Double) {
+        db.collection("users").document(userId).updateData([
+            "lastLatitude": latitude,
+            "lastLongitude": longitude
+        ]) { error in
+            if let error = error {
+                print("[Firestore] updateUserLocation error:", error.localizedDescription)
+            }
+        }
+    }
+
     // MARK: - Ratings
 
     func saveRating(rideId: String, rating: Int, comment: String,
