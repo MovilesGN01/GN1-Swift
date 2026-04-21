@@ -2,17 +2,13 @@ import SwiftUI
 import MapKit
 
 struct CreateRideView: View {
-    @StateObject private var viewModel = CreateRideViewModel()
+    @StateObject private var viewModel: CreateRideViewModel
     @StateObject private var originSearch = LocationSearchService()
     @StateObject private var destinationSearch = LocationSearchService()
     @Environment(\.dismiss) private var dismiss
     @State private var navigateToRequests = false
-
     private enum Field { case origin, destination }
     @FocusState private var focusedField: Field?
-    @StateObject private var viewModel: CreateRideViewModel
-    @Environment(\.dismiss) private var dismiss
-    @State private var navigateToRequests = false
 
     init(facade: AppFacadeType = AppFacade.shared) {
         _viewModel = StateObject(wrappedValue: CreateRideViewModel(facade: facade))

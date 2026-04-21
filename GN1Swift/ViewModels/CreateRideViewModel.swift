@@ -43,12 +43,9 @@ class CreateRideViewModel: ObservableObject {
             return
         }
         isLoading = true
-        CloudFunctionsService.shared.createRide(
+        facade.createRide(
             origin: originText,
             destination: destinationText,
-        facade.createRide(
-            origin: origin,
-            destination: destination,
             zone: zone,
             departureTime: departureTime,
             seatsAvailable: seatsAvailable

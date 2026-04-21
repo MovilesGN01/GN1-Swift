@@ -356,6 +356,13 @@ struct RidesView: View {
                             .font(.custom("Poppins-Regular", size: 12))
                             .foregroundColor(.textSecondary)
                     }
+                    Text(ride.urgencyLabel)
+                        .font(.custom("Poppins-SemiBold", size: 10))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(ride.urgencyColor)
+                        .cornerRadius(8)
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {

@@ -25,7 +25,6 @@ class RideInProgressViewModel: ObservableObject {
         return CLLocationCoordinate2D(latitude: lat, longitude: lng)
     }
 
-    init(ride: Ride) {
     init(ride: Ride, facade: AppFacadeType = AppFacade.shared) {
         self.ride = ride
         self.facade = facade
@@ -93,9 +92,7 @@ class RideInProgressViewModel: ObservableObject {
                 }
                 return
             }
-            FirestoreService.shared.markRideRequestsCompleted(rideId: self.ride.id)
-            CloudFunctionsService.shared.updateUserAnalytics {
-            // Write status directly so passenger listener always picks it up
+                // Write status directly so passenger listener always picks it up
             self.facade.markRideRequestsCompleted(rideId: self.ride.id)
             // Update analytics so getRideRecommendations has fresh data
             self.facade.updateUserAnalytics {

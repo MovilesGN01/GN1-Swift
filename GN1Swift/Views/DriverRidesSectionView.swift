@@ -78,6 +78,13 @@ struct DriverRidesSectionView: View {
                             .font(.custom("Poppins-Regular", size: 12))
                             .foregroundColor(.placeholderMuted)
                     }
+                    Text(ride.urgencyLabel)
+                        .font(.custom("Poppins-SemiBold", size: 10))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(ride.urgencyColor)
+                        .cornerRadius(8)
                 }
 
                 Spacer()
