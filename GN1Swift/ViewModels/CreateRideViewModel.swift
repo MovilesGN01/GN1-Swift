@@ -12,8 +12,14 @@ class CreateRideViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var createdRideId: String?
 
+
     var originCoordinate: CLLocationCoordinate2D?
     var destinationCoordinate: CLLocationCoordinate2D?
+    private let facade: AppFacadeType
+
+    init(facade: AppFacadeType = AppFacade.shared) {
+        self.facade = facade
+    }
 
     var isValid: Bool {
         !originText.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -40,6 +46,9 @@ class CreateRideViewModel: ObservableObject {
         CloudFunctionsService.shared.createRide(
             origin: originText,
             destination: destinationText,
+        facade.createRide(
+            origin: origin,
+            destination: destination,
             zone: zone,
             departureTime: departureTime,
             seatsAvailable: seatsAvailable

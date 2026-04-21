@@ -10,6 +10,13 @@ struct CreateRideView: View {
 
     private enum Field { case origin, destination }
     @FocusState private var focusedField: Field?
+    @StateObject private var viewModel: CreateRideViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var navigateToRequests = false
+
+    init(facade: AppFacadeType = AppFacade.shared) {
+        _viewModel = StateObject(wrappedValue: CreateRideViewModel(facade: facade))
+    }
 
     var body: some View {
         NavigationStack {

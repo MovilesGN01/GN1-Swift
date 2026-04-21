@@ -5,8 +5,9 @@
 //  Created by Cami Sánchez on 3/04/26.
 //
 
-class UserSession {
+final class UserSession {
     static let shared = UserSession()
+    private init() {}
     
     var userId: String?
     var email: String?

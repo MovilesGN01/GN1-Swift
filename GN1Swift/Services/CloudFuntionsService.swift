@@ -12,10 +12,11 @@ enum RequestRideResult {
 
 // MARK: - Service
 
-class CloudFunctionsService {
+final class CloudFunctionsService {
 
     static let shared = CloudFunctionsService()
     private let functions = Functions.functions(region: "us-central1")
+    private init() {}
     // MARK: - User
 
     func createUserDocument(completion: @escaping (Bool) -> Void) {

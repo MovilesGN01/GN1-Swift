@@ -4,9 +4,9 @@ struct RideDetailView: View {
     let ride: Ride
     @StateObject private var viewModel: RideDetailViewModel
 
-    init(ride: Ride) {
+    init(ride: Ride, facade: AppFacadeType = AppFacade.shared) {
         self.ride = ride
-        _viewModel = StateObject(wrappedValue: RideDetailViewModel(ride: ride))
+        _viewModel = StateObject(wrappedValue: RideDetailViewModel(ride: ride, facade: facade))
     }
 
     var body: some View {

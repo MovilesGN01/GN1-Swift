@@ -1,9 +1,11 @@
 import FirebaseFirestore
 
-class FirestoreService {
+final class FirestoreService {
 
     static let shared = FirestoreService()
     private let db = Firestore.firestore()
+
+    private init() {}
 
     // MARK: - User
 

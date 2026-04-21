@@ -16,14 +16,19 @@ class PassengerRidesViewModel: ObservableObject {
     @Published var minRating: Double = 0.0 { didSet { filterRides() } }
     @Published var minSeats: Int = 1 { didSet { filterRides() } }
 
+    private let facade: AppFacadeType
     private var currentUserId: String { UserSession.shared.userId ?? "" }
+
+    init(facade: AppFacadeType = AppFacade.shared) {
+        self.facade = facade
+    }
 
     func loadRides() {
         isLoading = true
         let group = DispatchGroup()
 
         group.enter()
-        CloudFunctionsService.shared.getAllAvailableRides { [weak self] rides in
+        facade.fetchAllAvailableRides { [weak self] rides in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 // Filter out the signed-in driver's own rides from the marketplace.
@@ -36,7 +41,7 @@ class PassengerRidesViewModel: ObservableObject {
         }
 
         group.enter()
-        CloudFunctionsService.shared.getRecommendedRides { [weak self] rides in
+        facade.fetchRecommendedRides { [weak self] rides in
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 let filtered = rides.filter { $0.driverId != self.currentUserId }
