@@ -19,8 +19,20 @@ struct RideInProgressView: View {
 
             Map {
                 UserAnnotation()
+                if let coord = viewModel.originCoordinate {
+                    Marker("Origin", coordinate: coord)
+                        .tint(.blue)
+                }
+                if let coord = viewModel.destinationCoordinate {
+                    Marker("Destination", coordinate: coord)
+                        .tint(.green)
+                }
+                if let route = viewModel.route {
+                    MapPolyline(route.polyline)
+                        .stroke(.blue, lineWidth: 4)
+                }
             }
-            .frame(height: 200)
+            .frame(height: 260)
 
             ScrollView {
                 VStack(spacing: 16) {

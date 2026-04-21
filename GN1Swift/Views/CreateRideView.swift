@@ -1,6 +1,15 @@
 import SwiftUI
+import MapKit
 
 struct CreateRideView: View {
+    @StateObject private var viewModel = CreateRideViewModel()
+    @StateObject private var originSearch = LocationSearchService()
+    @StateObject private var destinationSearch = LocationSearchService()
+    @Environment(\.dismiss) private var dismiss
+    @State private var navigateToRequests = false
+
+    private enum Field { case origin, destination }
+    @FocusState private var focusedField: Field?
     @StateObject private var viewModel: CreateRideViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var navigateToRequests = false
@@ -74,24 +83,64 @@ struct CreateRideView: View {
         VStack(spacing: 16) {
 
             // Origin
-            HStack(spacing: 12) {
-                Image(systemName: "location.fill")
-                    .foregroundColor(.primaryBrand)
-                TextField("Origin (e.g. Chapinero)", text: $viewModel.origin)
-                    .font(.custom("Poppins-Regular", size: 14))
-                    .foregroundColor(.textPrimary)
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    Image(systemName: "location.fill")
+                        .foregroundColor(.primaryBrand)
+                    TextField("Origin (e.g. Chapinero)", text: $viewModel.originText)
+                        .font(.custom("Poppins-Regular", size: 14))
+                        .foregroundColor(.textPrimary)
+                        .focused($focusedField, equals: .origin)
+                        .onChange(of: viewModel.originText) { _, query in
+                            originSearch.search(query: query)
+                        }
+                }
+                .inputStyle()
+
+                if focusedField == .origin && !originSearch.suggestions.isEmpty {
+                    suggestionsList(suggestions: originSearch.suggestions) { suggestion in
+                        originSearch.resolveCoordinate(for: suggestion) { coordinate, name in
+                            DispatchQueue.main.async {
+                                if let coordinate, let name {
+                                    viewModel.setOrigin(name: name, coordinate: coordinate)
+                                }
+                                originSearch.suggestions = []
+                                focusedField = nil
+                            }
+                        }
+                    }
+                }
             }
-            .inputStyle()
 
             // Destination
-            HStack(spacing: 12) {
-                Image(systemName: "flag.fill")
-                    .foregroundColor(.green)
-                TextField("Destination (e.g. Campus Norte)", text: $viewModel.destination)
-                    .font(.custom("Poppins-Regular", size: 14))
-                    .foregroundColor(.textPrimary)
+            VStack(spacing: 0) {
+                HStack(spacing: 12) {
+                    Image(systemName: "flag.fill")
+                        .foregroundColor(.green)
+                    TextField("Destination (e.g. Campus Norte)", text: $viewModel.destinationText)
+                        .font(.custom("Poppins-Regular", size: 14))
+                        .foregroundColor(.textPrimary)
+                        .focused($focusedField, equals: .destination)
+                        .onChange(of: viewModel.destinationText) { _, query in
+                            destinationSearch.search(query: query)
+                        }
+                }
+                .inputStyle()
+
+                if focusedField == .destination && !destinationSearch.suggestions.isEmpty {
+                    suggestionsList(suggestions: destinationSearch.suggestions) { suggestion in
+                        destinationSearch.resolveCoordinate(for: suggestion) { coordinate, name in
+                            DispatchQueue.main.async {
+                                if let coordinate, let name {
+                                    viewModel.setDestination(name: name, coordinate: coordinate)
+                                }
+                                destinationSearch.suggestions = []
+                                focusedField = nil
+                            }
+                        }
+                    }
+                }
             }
-            .inputStyle()
 
             // Zone
             HStack(spacing: 12) {
@@ -163,5 +212,41 @@ struct CreateRideView: View {
             .padding(.top, 8)
         }
         .padding(.horizontal, 24)
+    }
+
+    // MARK: - Suggestions List
+
+    private func suggestionsList(
+        suggestions: [MKLocalSearchCompletion],
+        onSelect: @escaping (MKLocalSearchCompletion) -> Void
+    ) -> some View {
+        VStack(spacing: 0) {
+            ForEach(suggestions, id: \.self) { suggestion in
+                Button {
+                    onSelect(suggestion)
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(suggestion.title)
+                            .font(.custom("Poppins-SemiBold", size: 13))
+                            .foregroundColor(.textPrimary)
+                        if !suggestion.subtitle.isEmpty {
+                            Text(suggestion.subtitle)
+                                .font(.custom("Poppins-Regular", size: 11))
+                                .foregroundColor(.textSecondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                }
+                if suggestion != suggestions.last {
+                    Divider().padding(.leading, 14)
+                }
+            }
+        }
+        .background(Color.surfaceCard)
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.borderLine, lineWidth: 1))
+        .cornerRadius(12)
+        .padding(.top, 4)
     }
 }

@@ -1,5 +1,6 @@
 import CoreLocation
 import Combine
+import FirebaseAuth
 
 final class LocationService: NSObject, CLLocationManagerDelegate {
     static let shared = LocationService()
@@ -28,7 +29,15 @@ final class LocationService: NSObject, CLLocationManagerDelegate {
     // MARK: - CLLocationManagerDelegate
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        currentCoordinate = locations.last?.coordinate
+        guard let location = locations.last else { return }
+        currentCoordinate = location.coordinate
+        if let userId = Auth.auth().currentUser?.uid {
+            FirestoreService.shared.updateUserLocation(
+                userId: userId,
+                latitude: location.coordinate.latitude,
+                longitude: location.coordinate.longitude
+            )
+        }
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {

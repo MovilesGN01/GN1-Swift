@@ -12,6 +12,10 @@ struct Ride: Identifiable {
     let departureTime: Date
     let seatsAvailable: Int
     let status: String
+    let originLat: Double?
+    let originLng: Double?
+    let destinationLat: Double?
+    let destinationLng: Double?
 
     init(from data: [String: Any]) {
         self.id = data["id"] as? String ?? ""
@@ -24,5 +28,9 @@ struct Ride: Identifiable {
         self.departureTime = (data["departureTime"] as? Timestamp)?.dateValue() ?? Date()
         self.seatsAvailable = data["seatsAvailable"] as? Int ?? 0
         self.status = data["status"] as? String ?? ""
+        self.originLat = data["originLat"] as? Double
+        self.originLng = data["originLng"] as? Double
+        self.destinationLat = data["destinationLat"] as? Double
+        self.destinationLng = data["destinationLng"] as? Double
     }
 }
