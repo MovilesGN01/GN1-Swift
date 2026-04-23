@@ -8,10 +8,10 @@ struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var isPasswordVisible = false
-    @State private var showInvalidEmailAlert = false
+    @State private var isLoading = false
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
-    
+
     @State private var goToRegister = false
 
     private let institutionalDomain = "@uniandes.edu.co"
@@ -44,14 +44,21 @@ struct LoginView: View {
 
                     VStack(spacing: 16) {
                         Button(action: login) {
-                            Text("Sign In")
-                                .font(.custom("Poppins-SemiBold", size: 16))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 52)
-                                .background(Color.primaryBrand)
-                                .cornerRadius(12)
+                            ZStack {
+                                if isLoading {
+                                    ProgressView().tint(.white)
+                                } else {
+                                    Text("Sign In")
+                                        .font(.custom("Poppins-SemiBold", size: 16))
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(Color.primaryBrand)
+                            .cornerRadius(12)
                         }
+                        .disabled(isLoading)
 
                         HStack {
                             Rectangle()
@@ -80,6 +87,7 @@ struct LoginView: View {
                                         .stroke(Color.primaryBrand, lineWidth: 1.5)
                                 )
                         }
+                        .disabled(isLoading)
                     }
                     .padding(.horizontal, 24)
                     .padding(.top, 32)
@@ -89,11 +97,6 @@ struct LoginView: View {
             .background(Color.backgroundApp)
             .navigationDestination(isPresented: $goToRegister) {
                 RegisterDetailsView(isLoggedIn: $isLoggedIn)
-            }
-            .alert("Invalid email", isPresented: $showInvalidEmailAlert) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text("You must use your institutional email @uniandes.edu.co")
             }
             .alert("Error", isPresented: $showErrorAlert) {
                 Button("OK", role: .cancel) { }
@@ -132,6 +135,9 @@ struct LoginView: View {
                 .keyboardType(.emailAddress)
                 .font(.custom("Poppins-Regular", size: 14))
                 .foregroundColor(.textPrimary)
+                .onChange(of: email) { _, newValue in
+                    if newValue.count > 100 { email = String(newValue.prefix(100)) }
+                }
         }
         .padding(.horizontal, 12)
         .frame(height: 52)
@@ -159,6 +165,9 @@ struct LoginView: View {
             .autocorrectionDisabled()
             .font(.custom("Poppins-Regular", size: 14))
             .foregroundColor(.textPrimary)
+            .onChange(of: password) { _, newValue in
+                if newValue.count > 100 { password = String(newValue.prefix(100)) }
+            }
 
             Button {
                 isPasswordVisible.toggle()
@@ -177,17 +186,21 @@ struct LoginView: View {
         .cornerRadius(12)
     }
 
-    // LOGIN → Firebase Auth
-    private func login() {
-        let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    // MARK: - Login
 
-        guard normalizedEmail.hasSuffix(institutionalDomain) else {
-            showInvalidEmailAlert = true
+    private func login() {
+        if let validationError = validate() {
+            errorMessage = validationError
+            showErrorAlert = true
             return
         }
 
+        let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+
+        isLoading = true
         facade.signIn(email: normalizedEmail, password: password) { result in
             DispatchQueue.main.async {
+                isLoading = false
                 switch result {
                 case .success:
                     isLoggedIn = true
@@ -198,5 +211,20 @@ struct LoginView: View {
             }
         }
     }
-    
+
+    private func validate() -> String? {
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedEmail.isEmpty else { return "Email cannot be empty." }
+        guard trimmedEmail.count <= 100 else { return "Email is too long." }
+        let emailPattern = #"^[a-zA-Z0-9._%+\-]+@uniandes\.edu\.co$"#
+        guard trimmedEmail.range(of: emailPattern, options: .regularExpression) != nil else {
+            return "Use your institutional email (@uniandes.edu.co)."
+        }
+
+        let trimmedPassword = password.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPassword.isEmpty else { return "Password cannot be empty." }
+        guard trimmedPassword.count >= 6 else { return "Password must be at least 6 characters." }
+
+        return nil
+    }
 }
