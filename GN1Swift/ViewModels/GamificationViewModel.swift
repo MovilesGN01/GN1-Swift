@@ -18,11 +18,7 @@ class GamificationViewModel: ObservableObject {
     func loadGamificationProfile() {
         guard let userId = Auth.auth().currentUser?.uid else {
             errorMessage = "User not authenticated"
-            // Try to load from memory cache, then disk cache for offline support
-            if let memCached = GamificationMemoryCache.shared.getProfile(forKey: userId) {
-                self.gamification = memCached
-                return
-            }
+            // Try to load from disk cache for offline support
             if let diskCached = GamificationCacheManager.shared.loadCachedProfile() {
                 self.gamification = diskCached
             }
@@ -134,8 +130,6 @@ class GamificationViewModel: ObservableObject {
                     }
                 }
             }
-        }
-    }
         }
     }
     
