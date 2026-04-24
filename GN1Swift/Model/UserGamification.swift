@@ -27,6 +27,24 @@ struct Badge: Identifiable, Codable {
         self.progress = dict["progress"] as? Int
         self.unlockedAt = UserGamification.parseDate(dict["unlockedAt"])
     }
+
+    init(
+        id: String,
+        name: String,
+        description: String,
+        icon: String,
+        color: String,
+        unlockedAt: Date? = nil,
+        progress: Int? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.description = description
+        self.icon = icon
+        self.color = color
+        self.unlockedAt = unlockedAt
+        self.progress = progress
+    }
 }
 
 struct StreakInfo: Codable {
