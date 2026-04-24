@@ -43,8 +43,51 @@ final class AppFacade: AppFacadeType {
         }
     }
 
+    func registerUser(
+        name: String,
+        email: String,
+        password: String,
+        role: String,
+        gender: Gender,
+        carModel: String,
+        plate: String,
+        seats: Int?,
+        completion: @escaping (AuthFlowResult) -> Void
+    ) {
+        authService.register(email: email, password: password) { [weak self] userId in
+            guard let self = self, let userId = userId else {
+                completion(.failure(message: "Error creating account"))
+                return
+            }
+
+            self.session.userId = userId
+            self.session.email = email
+            self.session.name = name
+            self.session.role = role
+            self.session.gender = gender
+            self.session.carModel = carModel
+            self.session.plate = plate
+            self.session.seats = seats
+
+            self.cloudFunctionsService.createUserDocument { success in
+                if success {
+                    completion(.success)
+                } else {
+                    completion(.failure(message: "Error creating user profile"))
+                }
+            }
+        }
+    }
+
     func fetchAllAvailableRides(completion: @escaping ([Ride]) -> Void) {
         cloudFunctionsService.getAllAvailableRides(completion: completion)
+    }
+
+    func fetchAllRidesOnlineFirst(
+        onSuccess: @escaping ([Ride]) -> Void,
+        onFallback: @escaping ([Ride]) -> Void
+    ) {
+        RideRepository.shared.fetchAllRides(onSuccess: onSuccess, onFallback: onFallback)
     }
 
     func fetchRecommendedRides(completion: @escaping ([Ride]) -> Void) {
@@ -61,6 +104,7 @@ final class AppFacade: AppFacadeType {
         zone: String,
         departureTime: Date,
         seatsAvailable: Int,
+        price: Double,
         completion: @escaping (String?) -> Void
     ) {
         cloudFunctionsService.createRide(
@@ -69,6 +113,27 @@ final class AppFacade: AppFacadeType {
             zone: zone,
             departureTime: departureTime,
             seatsAvailable: seatsAvailable,
+            price: price,
+            completion: completion
+        )
+    }
+
+    func createRideOfflineFirst(
+        origin: String,
+        destination: String,
+        zone: String,
+        departureTime: Date,
+        seatsAvailable: Int,
+        price: Double,
+        completion: @escaping (String?, Bool) -> Void
+    ) {
+        RideRepository.shared.createRideOfflineFirst(
+            origin: origin,
+            destination: destination,
+            zone: zone,
+            departureTime: departureTime,
+            seatsAvailable: seatsAvailable,
+            price: price,
             completion: completion
         )
     }
@@ -122,6 +187,30 @@ final class AppFacade: AppFacadeType {
 
     func fetchUserName(userId: String, completion: @escaping (String?) -> Void) {
         firestoreService.fetchUserName(userId: userId, completion: completion)
+    }
+
+    func fetchDriverGender(driverId: String, completion: @escaping (String?) -> Void) {
+        firestoreService.fetchDriverGender(driverId: driverId, completion: completion)
+    }
+
+    func fetchPassengerRequests(
+        passengerId: String,
+        completion: @escaping ([RideRequest]) -> Void
+    ) {
+        firestoreService.fetchPassengerRequests(
+            passengerId: passengerId,
+            completion: completion
+        )
+    }
+
+    func fetchRideHistory(
+        passengerId: String,
+        completion: @escaping ([RideHistory]) -> Void
+    ) {
+        firestoreService.fetchRideHistory(
+            passengerId: passengerId,
+            completion: completion
+        )
     }
 
     func requestLocationPermissionAndStart() {

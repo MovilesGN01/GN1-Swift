@@ -8,6 +8,7 @@ class RideDetailViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var driverGamification: UserGamification?
     @Published var isLoadingGamification = false
+    @Published var driverGender: String?
 
     let ride: Ride
     private let facade: AppFacadeType
@@ -17,12 +18,19 @@ class RideDetailViewModel: ObservableObject {
         self.facade = facade
     }
 
-    /// Call from onAppear to pre-disable the button if the user already requested this ride.
     func checkExistingRequest() {
         guard let userId = UserSession.shared.userId else { return }
         facade.hasExistingRequest(rideId: ride.id, passengerId: userId) { [weak self] exists in
             DispatchQueue.main.async {
                 if exists { self?.alreadyRequested = true }
+            }
+        }
+    }
+
+    func loadDriverGender() {
+        facade.fetchDriverGender(driverId: ride.driverId) { [weak self] gender in
+            DispatchQueue.main.async {
+                self?.driverGender = gender
             }
         }
     }

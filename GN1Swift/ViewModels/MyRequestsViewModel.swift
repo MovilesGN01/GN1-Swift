@@ -12,15 +12,13 @@ class MyRequestsViewModel: ObservableObject {
 
     func startListening() {
         guard let userId = UserSession.shared.userId else { return }
-        // Stop any existing listener before creating a new one
-        stopListening?()
-        stopListening = nil
-        isLoading = true
+        // If a listener is already running (e.g. user switched tabs and came back),
+        // don't tear it down — that would blank `requests` for a moment and make
+        // the "Reserve" button incorrectly re-enable.
+        guard stopListening == nil else { return }
+        isLoading = requests.isEmpty
         stopListening = FirestoreService.shared.listenToPassengerRequests(passengerId: userId) { [weak self] reqs in
             DispatchQueue.main.async {
-                for req in reqs {
-                    print("[MyRequests] rideId: \(req.rideId) status: \(req.status)")
-                }
                 self?.requests = reqs
                 self?.isLoading = false
             }

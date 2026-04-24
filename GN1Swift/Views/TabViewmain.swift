@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TabViewmain: View {
 
+    @Binding var isLoggedIn: Bool
     @State private var showChat = false
     @State private var selectedTab = 0
 
@@ -32,7 +33,7 @@ struct TabViewmain: View {
                     }
                     .tag(2)
 
-                ProfileView()
+                ProfileView(isLoggedIn: $isLoggedIn)
                     .tabItem {
                         Image(systemName: "person.fill")
                         Text("Profile")

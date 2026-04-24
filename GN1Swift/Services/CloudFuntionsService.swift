@@ -43,7 +43,10 @@ final class CloudFunctionsService {
               let role = UserSession.shared.role else {
             completion(false); return
         }
-        let data: [String: Any] = ["name": name, "email": email, "role": role]
+        var data: [String: Any] = ["name": name, "email": email, "role": role]
+        if let gender = UserSession.shared.gender {
+            data["gender"] = gender.rawValue
+        }
         functions.httpsCallable("createUserDocument").call(data) { _, error in
             if let error = error { print("createUserDocument error:", error.localizedDescription) }
             completion(error == nil)
@@ -73,6 +76,22 @@ final class CloudFunctionsService {
                 completion([]); return
             }
             completion(array.map { Ride(from: $0) })
+        }
+    }
+
+    /// Result-based overload used by RideRepository for online-first loading.
+    /// Returns .failure on any network/server error so the caller can distinguish
+    /// "Firebase unreachable" from "Firebase returned zero rides".
+    func getAllAvailableRides(completion: @escaping (Result<[Ride], Error>) -> Void) {
+        functions.httpsCallable("getAllAvailableRides").call { result, error in
+            if let error {
+                completion(.failure(error)); return
+            }
+            guard let data = result?.data as? [String: Any],
+                  let array = data["rides"] as? [[String: Any]] else {
+                completion(.success([])); return
+            }
+            completion(.success(array.map { Ride(from: $0) }))
         }
     }
 
@@ -141,32 +160,33 @@ final class CloudFunctionsService {
                     zone: String,
                     departureTime: Date,
                     seatsAvailable: Int,
+                    price: Double,
                     completion: @escaping (String?) -> Void) {
-        
-        guard let userId = Auth.auth().currentUser?.uid,
+
+        guard Auth.auth().currentUser?.uid != nil,
               let driverName = UserSession.shared.name else {
             completion(nil)
             return
         }
-        
+
         let data: [String: Any] = [
             "driverName": driverName,
+            "driverGender": UserSession.shared.gender?.rawValue ?? "",
             "driverRating": 5.0,
             "origin": origin,
             "destination": destination,
             "zone": zone,
-            "departureTime": departureTime.timeIntervalSince1970 * 1000, // milisegundos
-            "seatsAvailable": seatsAvailable
+            "departureTime": departureTime.timeIntervalSince1970 * 1000,
+            "seatsAvailable": seatsAvailable,
+            "price": price
         ]
-        
+
         functions.httpsCallable("createRide").call(data) { result, error in
-            
             if let error = error {
                 print("createRide error:", error.localizedDescription)
                 completion(nil)
                 return
             }
-            
             if let resp = result?.data as? [String: Any],
                let rideId = resp["rideId"] as? String {
                 completion(rideId)

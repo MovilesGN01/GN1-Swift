@@ -12,10 +12,22 @@ final class FirestoreService {
     func loadUser(userId: String, completion: @escaping (Bool) -> Void) {
         db.collection("users").document(userId).getDocument { snapshot, _ in
             guard let data = snapshot?.data() else { completion(false); return }
+            // Always set userId — critical for session restoration where the caller
+            // (SessionManager) hasn't pre-populated UserSession.shared.userId.
+            UserSession.shared.userId = userId
             UserSession.shared.name = data["name"] as? String
             UserSession.shared.role = data["role"] as? String
             UserSession.shared.email = data["email"] as? String
+            if let genderRaw = data["gender"] as? String {
+                UserSession.shared.gender = Gender(rawValue: genderRaw)
+            }
             completion(true)
+        }
+    }
+
+    func fetchDriverGender(driverId: String, completion: @escaping (String?) -> Void) {
+        db.collection("users").document(driverId).getDocument { snapshot, _ in
+            completion(snapshot?.data()?["gender"] as? String)
         }
     }
 
@@ -272,6 +284,77 @@ final class FirestoreService {
                 print("[Firestore] updateUserLocation error:", error.localizedDescription)
             }
         }
+    }
+
+    // MARK: - Passenger One-Shot Fetches
+
+    /// One-shot fetch of all active (pending/accepted) ride requests for a passenger.
+    func fetchPassengerRequests(
+        passengerId: String,
+        completion: @escaping ([RideRequest]) -> Void
+    ) {
+        db.collection("rideRequests")
+            .whereField("passengerId", isEqualTo: passengerId)
+            .whereField("status", in: ["pending", "accepted"])
+            .getDocuments { snapshot, _ in
+                let requests = snapshot?.documents.map {
+                    RideRequest(id: $0.documentID, from: $0.data())
+                } ?? []
+                completion(requests)
+            }
+    }
+
+    /// One-shot fetch of all completed rides for a passenger.
+    func fetchRideHistory(
+        passengerId: String,
+        completion: @escaping ([RideHistory]) -> Void
+    ) {
+        db.collection("rideHistory")
+            .whereField("passengerId", isEqualTo: passengerId)
+            .getDocuments { snapshot, _ in
+                let history = snapshot?.documents.map {
+                    RideHistory(id: $0.documentID, from: $0.data())
+                } ?? []
+                completion(history)
+            }
+    }
+
+    /// Online-first fetch of passenger requests — returns `.failure` on network error
+    /// so callers can distinguish "offline" from "user has no requests".
+    func fetchPassengerRequestsResult(
+        passengerId: String,
+        completion: @escaping (Result<[RideRequest], Error>) -> Void
+    ) {
+        db.collection("rideRequests")
+            .whereField("passengerId", isEqualTo: passengerId)
+            .whereField("status", in: ["pending", "accepted"])
+            .getDocuments { snapshot, error in
+                if let error {
+                    completion(.failure(error)); return
+                }
+                let requests = snapshot?.documents.map {
+                    RideRequest(id: $0.documentID, from: $0.data())
+                } ?? []
+                completion(.success(requests))
+            }
+    }
+
+    /// Online-first fetch of ride history — returns `.failure` on network error.
+    func fetchRideHistoryResult(
+        passengerId: String,
+        completion: @escaping (Result<[RideHistory], Error>) -> Void
+    ) {
+        db.collection("rideHistory")
+            .whereField("passengerId", isEqualTo: passengerId)
+            .getDocuments { snapshot, error in
+                if let error {
+                    completion(.failure(error)); return
+                }
+                let history = snapshot?.documents.map {
+                    RideHistory(id: $0.documentID, from: $0.data())
+                } ?? []
+                completion(.success(history))
+            }
     }
 
     // MARK: - Ratings

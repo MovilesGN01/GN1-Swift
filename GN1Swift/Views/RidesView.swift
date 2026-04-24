@@ -26,6 +26,7 @@ struct RidesView: View {
     @State private var showReserveAlert = false
     @State private var showDuplicateAlert = false
     @State private var reservedDriverName = ""
+    @State private var reservingRideId: String?
 
     // ViewModels
     @StateObject private var passengerVM: PassengerRidesViewModel
@@ -63,10 +64,16 @@ struct RidesView: View {
             VStack(spacing: 0) {
                 ridesAppBar
 
+                // Offline notice — shown while serving cached rides before remote responds
+                if effectiveMode == .passenger && passengerVM.isOffline {
+                    offlineBanner
+                }
+
                 // Show segmented control only for users that can act as both roles.
                 if role == "both" {
                     modePicker
                 }
+
 
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
@@ -80,6 +87,7 @@ struct RidesView: View {
                 .background(Color.backgroundApp)
             }
             .background(Color.backgroundApp)
+            .animation(.easeInOut(duration: 0.25), value: passengerVM.isOffline)
             // Reserve quick-action alert (passenger ride cards)
             .alert("Ride Reserved", isPresented: $showReserveAlert) {
                 Button("OK", role: .cancel) {}
@@ -90,6 +98,15 @@ struct RidesView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("You already requested this ride.")
+            }
+            // Expired-offline-ride alert — shown one at a time; dismissed by the driver.
+            .alert("Ride Not Created", isPresented: Binding(
+                get: { driverVM.activeExpiredMessage != nil },
+                set: { if !$0 { driverVM.dismissExpiredMessage() } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(driverVM.activeExpiredMessage ?? "")
             }
             // Sheets
             .sheet(isPresented: $showCreateRide) { CreateRideView() }
@@ -144,6 +161,23 @@ struct RidesView: View {
         .padding(.horizontal, 12)
         .padding(.top, 8)
         .padding(.bottom, 10)
+    }
+
+    // MARK: - Offline Banner
+
+    private var offlineBanner: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "wifi.slash")
+                .font(.system(size: 11, weight: .medium))
+            Text("Viewing rides offline")
+                .font(.custom("Poppins-Regular", size: 12))
+        }
+        .foregroundColor(.secondary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity)
+        .background(Color(.systemGray6))
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
 
     // MARK: - Mode Picker
@@ -235,9 +269,9 @@ struct RidesView: View {
         .padding(.top, 16)
         .padding(.bottom, 4)
 
-        // --- My Created Rides ---
+        // --- My Created Rides (Firebase rides + locally pending rides) ---
         DriverRidesSectionView(
-            rides: driverVM.myRides,
+            rides: driverVM.allRides,
             isLoading: driverVM.isLoadingRides,
             onTap: { ride in
                 selectedRide = ride
@@ -376,29 +410,50 @@ struct RidesView: View {
             }
 
             // Quick-reserve button (alternative to opening RideDetailView)
+            // Check both the real-time listener AND the startup snapshot to ensure
+            // the button shows the correct disabled state immediately on launch.
             let alreadyRequested = myRequestsVM.hasRequested(rideId: ride.id)
+                || passengerVM.requestedRideIds.contains(ride.id)
+            let isCompleted = passengerVM.completedRideIds.contains(ride.id)
+            let isReserving = reservingRideId == ride.id
+            let isBlocked = alreadyRequested || isCompleted
             Button {
+                guard !isReserving, !isBlocked else { return }
+                reservingRideId = ride.id
                 facade.requestRide(rideId: ride.id) { result in
-                    switch result {
-                    case .success:
-                        reservedDriverName = ride.driverName
-                        showReserveAlert = true
-                    case .alreadyRequested:
-                        showDuplicateAlert = true
-                    case .failure:
-                        break
+                    DispatchQueue.main.async {
+                        reservingRideId = nil
+                        switch result {
+                        case .success:
+                            reservedDriverName = ride.driverName
+                            showReserveAlert = true
+                        case .alreadyRequested:
+                            showDuplicateAlert = true
+                        case .failure:
+                            break
+                        }
                     }
                 }
             } label: {
-                Text(alreadyRequested ? "Request already sent" : "Reserve")
-                    .font(.custom("Poppins-SemiBold", size: 14))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 40)
-                    .background(alreadyRequested ? Color.placeholderMuted : Color.primaryBrand)
-                    .cornerRadius(10)
+                ZStack {
+                    if isReserving {
+                        ProgressView().tint(.white)
+                    } else {
+                        Text(isCompleted
+                             ? "Ride completed"
+                             : alreadyRequested
+                               ? "Request already sent"
+                               : "Reserve")
+                            .font(.custom("Poppins-SemiBold", size: 14))
+                            .foregroundColor(.white)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 40)
+                .background(isBlocked ? Color.placeholderMuted : Color.primaryBrand)
+                .cornerRadius(10)
             }
-            .disabled(alreadyRequested)
+            .disabled(isBlocked || isReserving)
         }
         .padding(16)
         .background(highlighted ? Color.primaryBrand.opacity(0.04) : Color.backgroundApp)
@@ -424,7 +479,7 @@ struct RidesView: View {
     /// Start only the listeners relevant to the signed-in user's role.
     private func loadForRole() {
         if role != "driver" {           // passenger or both
-            passengerVM.loadRides()
+            passengerVM.loadFullRideState()
             myRequestsVM.startListening()
         }
         if role != "passenger" {        // driver or both

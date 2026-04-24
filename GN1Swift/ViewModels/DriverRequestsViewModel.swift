@@ -4,6 +4,7 @@ import Combine
 class DriverRequestsViewModel: ObservableObject {
     @Published var requests: [RideRequest] = []
     @Published var isLoading = false
+    @Published var processingRequestId: String?
 
     private let facade: AppFacadeType
     private var stopListening: (() -> Void)?
@@ -41,14 +42,21 @@ class DriverRequestsViewModel: ObservableObject {
 
     /// Reject a passenger request.
     func reject(_ request: RideRequest) {
-        facade.rejectRide(requestId: request.id) { success in
+        guard processingRequestId == nil else { return }
+        processingRequestId = request.id
+        facade.rejectRide(requestId: request.id) { [weak self] success in
             if !success { print("Failed to reject request \(request.id)") }
+            DispatchQueue.main.async { self?.processingRequestId = nil }
         }
     }
 
     /// Accepts the request: sets status = "accepted" and decrements seats (handled by CF).
     func accept(_ request: RideRequest) {
-        facade.acceptRide(requestId: request.id) { _ in }
+        guard processingRequestId == nil else { return }
+        processingRequestId = request.id
+        facade.acceptRide(requestId: request.id) { [weak self] _ in
+            DispatchQueue.main.async { self?.processingRequestId = nil }
+        }
     }
 
     // MARK: - Name Enrichment

@@ -29,6 +29,7 @@ struct RideDetailView: View {
         .onAppear {
             viewModel.checkExistingRequest()
             viewModel.loadDriverGamification()
+            viewModel.loadDriverGender()
         }
         .alert("Ride Reserved!", isPresented: $viewModel.requestSuccess) {
             Button("OK", role: .cancel) {}
@@ -67,6 +68,11 @@ struct RideDetailView: View {
                         Image(systemName: "star.fill").foregroundColor(.yellow).font(.system(size: 13))
                         Text(String(format: "%.1f", ride.driverRating))
                             .font(.custom("Poppins-Regular", size: 14))
+                            .foregroundColor(.textSecondary)
+                    }
+                    if let gender = viewModel.driverGender {
+                        Text("Driver: \(gender.capitalized)")
+                            .font(.custom("Poppins-Regular", size: 13))
                             .foregroundColor(.textSecondary)
                     }
                 }
