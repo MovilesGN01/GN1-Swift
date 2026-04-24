@@ -160,5 +160,18 @@ final class AppFacade: AppFacadeType {
                 }
             }
         }
+    }  
+  
+    func fetchGamificationProfile(userId: String, completion: @escaping (UserGamification?) -> Void) {
+        cloudFunctionsService.fetchGamificationProfile(userId: userId, completion: completion)
+    }
+    
+    func fetchLeaderboard(completion: @escaping ([UserGamification]) -> Void) {
+        cloudFunctionsService.fetchLeaderboard(completion: completion)
+    }
+    
+    func submitRideRating(rideId: String, rating: Int, comment: String,
+                         completion: @escaping (Bool) -> Void) {
+        cloudFunctionsService.submitRideRating(rideId: rideId, rating: rating, comment: comment, completion: completion)
     }
 }

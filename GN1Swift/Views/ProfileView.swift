@@ -1,10 +1,12 @@
 import SwiftUI
+import FirebaseAuth
 
 enum NfcStatus {
     case ready, scanning, authorized
 }
 
 struct ProfileView: View {
+    @StateObject private var gamificationVM = GamificationViewModel()
     
     @State private var status: NfcStatus = .ready
     @State private var message = "Bring your university ID or phone closer to validate access."
@@ -18,6 +20,63 @@ struct ProfileView: View {
                 // HEADER
                 Text("Profile")
                     .font(.custom("Poppins-Bold", size: 24))
+                
+                // GAMIFICATION SUMMARY SECTION
+                if let gamification = gamificationVM.gamification {
+                    VStack(spacing: 12) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Level \(gamification.level)")
+                                    .font(.custom("Poppins-Bold", size: 20))
+                                    .foregroundColor(.primaryBrand)
+                                
+                                Text("\(gamification.points) points")
+                                    .font(.custom("Poppins-Regular", size: 13))
+                                    .foregroundColor(.textSecondary)
+                            }
+                            
+                            Spacer()
+                            
+                            VStack(alignment: .trailing, spacing: 4) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "flame.fill")
+                                        .foregroundColor(.orange)
+                                    Text("\(gamification.streakInfo.currentStreak)")
+                                        .font(.custom("Poppins-SemiBold", size: 16))
+                                        .foregroundColor(.orange)
+                                }
+                                
+                                HStack(spacing: 4) {
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor(.yellow)
+                                    Text("\(gamification.unlockedBadgesCount)")
+                                        .font(.custom("Poppins-SemiBold", size: 16))
+                                        .foregroundColor(.yellow)
+                                }
+                            }
+                        }
+                        .padding(12)
+                        .background(Color.primaryBrand.opacity(0.1))
+                        .cornerRadius(12)
+                        
+                        NavigationLink(destination: CommunityView()) {
+                            HStack {
+                                Text("View full profile")
+                                    .font(.custom("Poppins-SemiBold", size: 13))
+                                    .foregroundColor(.primaryBrand)
+                                
+                                Image(systemName: "arrow.right")
+                                    .foregroundColor(.primaryBrand)
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(8)
+                        }
+                    }
+                    .padding()
+                    .background(Color.surfaceCard)
+                    .cornerRadius(16)
+                }
                 
                 // NFC SECTION
                 VStack(spacing: 16) {
@@ -43,8 +102,10 @@ struct ProfileView: View {
             .padding()
         }
         .background(Color.backgroundApp)
+        .onAppear {
+            gamificationVM.loadGamificationProfile()
+        }
     }
-}
 
 // MARK: - STATUS CARD
 

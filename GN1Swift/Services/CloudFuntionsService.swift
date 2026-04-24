@@ -207,4 +207,46 @@ final class CloudFunctionsService {
             completion(reply)
         }
     }
+    
+    // MARK: - Gamification
+    
+    func fetchGamificationProfile(userId: String, completion: @escaping (UserGamification?) -> Void) {
+        functions.httpsCallable("getGamificationProfile").call(["userId": userId]) { result, error in
+            guard error == nil,
+                  let data = result?.data as? [String: Any] else {
+                completion(nil); return
+            }
+            // Parse the gamification profile from the response
+            if let profile = UserGamification(from: data) {
+                completion(profile)
+            } else {
+                completion(nil)
+            }
+        }
+    }
+    
+    func fetchLeaderboard(completion: @escaping ([UserGamification]) -> Void) {
+        functions.httpsCallable("getLeaderboard").call { result, error in
+            guard error == nil,
+                  let data = result?.data as? [String: Any],
+                  let playersData = data["players"] as? [[String: Any]] else {
+                completion([]); return
+            }
+            let players = playersData.compactMap { UserGamification(from: $0) }
+            completion(players)
+        }
+    }
+    
+    func submitRideRating(rideId: String, rating: Int, comment: String,
+                         completion: @escaping (Bool) -> Void) {
+        let payload: [String: Any] = [
+            "rideId": rideId,
+            "rating": rating,
+            "comment": comment
+        ]
+        functions.httpsCallable("submitRideRatingWithReward").call(payload) { _, error in
+            completion(error == nil)
+        }
+    }
 }
+

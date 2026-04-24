@@ -166,10 +166,12 @@ struct RateRideView: View {
 
     private func submitRating() {
         isSubmitting = true
-        FirestoreService.shared.saveRating(rideId: rideId, rating: selectedRating, comment: comment) { _ in
+        AppFacade.shared.submitRideRating(rideId: rideId, rating: selectedRating, comment: comment) { success in
             DispatchQueue.main.async {
                 isSubmitting = false
-                withAnimation { didSubmit = true }
+                if success {
+                    withAnimation { didSubmit = true }
+                }
             }
         }
     }
