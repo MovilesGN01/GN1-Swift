@@ -38,5 +38,10 @@ protocol AppFacadeType {
     )
     func fetchGamificationProfile(userId: String, completion: @escaping (UserGamification?) -> Void)
     func fetchLeaderboard(completion: @escaping ([UserGamification]) -> Void)
-    func submitRideRating(rideId: String, rating: Int, comment: String, completion: @escaping (Bool) -> Void)
+    func submitRideRating(
+        rideId: String,
+        rating: Int,
+        comment: String,
+        completion: @escaping (SubmitRideRatingResult) -> Void
+    )
 }

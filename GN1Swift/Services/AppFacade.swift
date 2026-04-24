@@ -171,7 +171,7 @@ final class AppFacade: AppFacadeType {
     }
     
     func submitRideRating(rideId: String, rating: Int, comment: String,
-                         completion: @escaping (Bool) -> Void) {
+                         completion: @escaping (SubmitRideRatingResult) -> Void) {
         cloudFunctionsService.submitRideRating(rideId: rideId, rating: rating, comment: comment, completion: completion)
     }
 }

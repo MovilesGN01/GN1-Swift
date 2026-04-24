@@ -6,6 +6,8 @@ class RideDetailViewModel: ObservableObject {
     @Published var requestSuccess = false
     @Published var alreadyRequested = false
     @Published var errorMessage: String?
+    @Published var driverGamification: UserGamification?
+    @Published var isLoadingGamification = false
 
     let ride: Ride
     private let facade: AppFacadeType
@@ -39,6 +41,16 @@ class RideDetailViewModel: ObservableObject {
                 case .failure:
                     self?.errorMessage = "Failed to reserve ride. Please try again."
                 }
+            }
+        }
+    }
+
+    func loadDriverGamification() {
+        isLoadingGamification = true
+        facade.fetchGamificationProfile(userId: ride.driverId) { [weak self] profile in
+            DispatchQueue.main.async {
+                self?.isLoadingGamification = false
+                self?.driverGamification = profile
             }
         }
     }

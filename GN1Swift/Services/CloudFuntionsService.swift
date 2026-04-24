@@ -10,6 +10,24 @@ enum RequestRideResult {
     case failure
 }
 
+struct SubmitRideRatingResult {
+    let success: Bool
+    let pointsAwarded: Int
+    let newLevel: Int?
+    let newTotalPoints: Int?
+    let badgeUnlocked: Badge?
+    let message: String?
+
+    static let failure = SubmitRideRatingResult(
+        success: false,
+        pointsAwarded: 0,
+        newLevel: nil,
+        newTotalPoints: nil,
+        badgeUnlocked: nil,
+        message: "Failed to submit rating"
+    )
+}
+
 // MARK: - Service
 
 final class CloudFunctionsService {
@@ -216,12 +234,12 @@ final class CloudFunctionsService {
                   let data = result?.data as? [String: Any] else {
                 completion(nil); return
             }
-            // Parse the gamification profile from the response
-            if let profile = UserGamification(from: data) {
-                completion(profile)
-            } else {
-                completion(nil)
-            }
+
+            // Supports both payload styles:
+            // 1) direct profile object
+            // 2) wrapped response { success, data }
+            let profilePayload = (data["data"] as? [String: Any]) ?? data
+            completion(UserGamification(from: profilePayload))
         }
     }
     
@@ -238,14 +256,49 @@ final class CloudFunctionsService {
     }
     
     func submitRideRating(rideId: String, rating: Int, comment: String,
-                         completion: @escaping (Bool) -> Void) {
+                         completion: @escaping (SubmitRideRatingResult) -> Void) {
         let payload: [String: Any] = [
             "rideId": rideId,
             "rating": rating,
             "comment": comment
         ]
-        functions.httpsCallable("submitRideRatingWithReward").call(payload) { _, error in
-            completion(error == nil)
+        functions.httpsCallable("submitRideRatingWithReward").call(payload) { result, error in
+            if let error = error {
+                completion(
+                    SubmitRideRatingResult(
+                        success: false,
+                        pointsAwarded: 0,
+                        newLevel: nil,
+                        newTotalPoints: nil,
+                        badgeUnlocked: nil,
+                        message: error.localizedDescription
+                    )
+                )
+                return
+            }
+
+            guard let data = result?.data as? [String: Any] else {
+                completion(.failure)
+                return
+            }
+
+            let badge: Badge? = {
+                guard let badgeData = data["badgeUnlocked"] as? [String: Any] else {
+                    return nil
+                }
+                return Badge(from: badgeData)
+            }()
+
+            completion(
+                SubmitRideRatingResult(
+                    success: (data["success"] as? Bool) ?? true,
+                    pointsAwarded: data["pointsAwarded"] as? Int ?? 0,
+                    newLevel: data["newLevel"] as? Int,
+                    newTotalPoints: data["newTotalPoints"] as? Int,
+                    badgeUnlocked: badge,
+                    message: data["message"] as? String
+                )
+            )
         }
     }
 }

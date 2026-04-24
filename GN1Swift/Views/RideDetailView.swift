@@ -26,7 +26,10 @@ struct RideDetailView: View {
         .background(Color.backgroundApp)
         .navigationTitle("Ride Details")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { viewModel.checkExistingRequest() }
+        .onAppear {
+            viewModel.checkExistingRequest()
+            viewModel.loadDriverGamification()
+        }
         .alert("Ride Reserved!", isPresented: $viewModel.requestSuccess) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -45,7 +48,7 @@ struct RideDetailView: View {
     // MARK: - Driver Card
 
     private var driverCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Circle()
                     .fill(Color.primaryBrand.opacity(0.15))
@@ -77,6 +80,68 @@ struct RideDetailView: View {
                     .padding(.vertical, 4)
                     .background(Color.primaryBrand.opacity(0.1))
                     .cornerRadius(8)
+            }
+
+            Divider()
+
+            if let gamification = viewModel.driverGamification {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Level")
+                            .font(.custom("Poppins-Regular", size: 12))
+                            .foregroundColor(.textSecondary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.circle.fill")
+                                .foregroundColor(.primaryBrand)
+                            Text("\(gamification.level)")
+                                .font(.custom("Poppins-Bold", size: 16))
+                                .foregroundColor(.textPrimary)
+                        }
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Points")
+                            .font(.custom("Poppins-Regular", size: 12))
+                            .foregroundColor(.textSecondary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "bolt.circle.fill")
+                                .foregroundColor(.orange)
+                            Text("\(gamification.points)")
+                                .font(.custom("Poppins-Bold", size: 16))
+                                .foregroundColor(.textPrimary)
+                        }
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Badges")
+                            .font(.custom("Poppins-Regular", size: 12))
+                            .foregroundColor(.textSecondary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "award.circle.fill")
+                                .foregroundColor(.yellow)
+                            Text("\(gamification.unlockedBadgesCount)")
+                                .font(.custom("Poppins-Bold", size: 16))
+                                .foregroundColor(.textPrimary)
+                        }
+                    }
+                }
+                .padding(12)
+                .background(Color.primaryBrand.opacity(0.05))
+                .cornerRadius(12)
+            } else if viewModel.isLoadingGamification {
+                HStack {
+                    ProgressView()
+                        .tint(.primaryBrand)
+                    Text("Loading gamification profile...")
+                        .font(.custom("Poppins-Regular", size: 13))
+                        .foregroundColor(.textSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(12)
             }
         }
         .padding()

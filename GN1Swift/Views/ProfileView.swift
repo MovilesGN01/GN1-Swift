@@ -85,13 +85,21 @@ struct ProfileView: View {
                         .font(.custom("Poppins-SemiBold", size: 18))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    statusCard
+                    Group {
+                        statusCard
+                    }
                     
-                    scanner
+                    Group {
+                        scanner
+                    }
                     
-                    buttons
+                    Group {
+                        buttons
+                    }
                     
-                    accessCard
+                    Group {
+                        accessCard
+                    }
                 }
                 .padding()
                 .background(Color.surfaceCard)
@@ -106,6 +114,7 @@ struct ProfileView: View {
             gamificationVM.loadGamificationProfile()
         }
     }
+}
 
 // MARK: - STATUS CARD
 

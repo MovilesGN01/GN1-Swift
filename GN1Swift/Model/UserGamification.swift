@@ -1,4 +1,5 @@
 import Foundation
+import FirebaseFirestore
 
 struct Badge: Identifiable, Codable {
     let id: String
@@ -15,6 +16,16 @@ struct Badge: Identifiable, Codable {
     
     enum CodingKeys: String, CodingKey {
         case id, name, description, icon, color, unlockedAt, progress
+    }
+
+    init(from dict: [String: Any]) {
+        self.id = dict["id"] as? String ?? ""
+        self.name = dict["name"] as? String ?? ""
+        self.description = dict["description"] as? String ?? ""
+        self.icon = dict["icon"] as? String ?? "star.fill"
+        self.color = dict["color"] as? String ?? "blue"
+        self.progress = dict["progress"] as? Int
+        self.unlockedAt = UserGamification.parseDate(dict["unlockedAt"])
     }
 }
 
@@ -65,24 +76,55 @@ struct UserGamification: Codable {
     }
     
     // MARK: - Parsing from Firestore/Cloud Functions
+
+    init(
+        userId: String,
+        points: Int = 0,
+        level: Int = 1,
+        totalXP: Int = 0,
+        badges: [Badge] = [],
+        streakInfo: StreakInfo = StreakInfo(),
+        lastGamificationUpdate: Date = Date()
+    ) {
+        self.userId = userId
+        self.points = points
+        self.level = level
+        self.totalXP = totalXP
+        self.badges = badges
+        self.streakInfo = streakInfo
+        self.lastGamificationUpdate = lastGamificationUpdate
+    }
+
+    static func parseDate(_ raw: Any?) -> Date? {
+        guard let raw else { return nil }
+
+        if let date = raw as? Date { return date }
+        if let ts = raw as? Timestamp { return ts.dateValue() }
+        if let seconds = raw as? TimeInterval { return Date(timeIntervalSince1970: seconds) }
+        if let intSeconds = raw as? Int { return Date(timeIntervalSince1970: TimeInterval(intSeconds)) }
+
+        if let map = raw as? [String: Any] {
+            if let seconds = map["_seconds"] as? TimeInterval {
+                return Date(timeIntervalSince1970: seconds)
+            }
+            if let seconds = map["seconds"] as? TimeInterval {
+                return Date(timeIntervalSince1970: seconds)
+            }
+        }
+
+        return nil
+    }
     
     init(from dict: [String: Any]) {
         self.userId = dict["userId"] as? String ?? ""
         self.points = dict["points"] as? Int ?? 0
         self.level = dict["level"] as? Int ?? 1
         self.totalXP = dict["totalXP"] as? Int ?? 0
-        self.lastGamificationUpdate = (dict["lastGamificationUpdate"] as? Date) ?? Date()
+        self.lastGamificationUpdate = Self.parseDate(dict["lastGamificationUpdate"]) ?? Date()
         
         // Parse badges
         if let badgesData = dict["badges"] as? [[String: Any]] {
-            self.badges = badgesData.compactMap { badgeDict in
-                let decoder = JSONDecoder()
-                if let jsonData = try? JSONSerialization.data(withJSONObject: badgeDict),
-                   let badge = try? decoder.decode(Badge.self, from: jsonData) {
-                    return badge
-                }
-                return nil
-            }
+            self.badges = badgesData.map { Badge(from: $0) }
         } else {
             self.badges = []
         }
@@ -92,7 +134,7 @@ struct UserGamification: Codable {
             self.streakInfo = StreakInfo(
                 currentStreak: streakData["currentStreak"] as? Int ?? 0,
                 longestStreak: streakData["longestStreak"] as? Int ?? 0,
-                lastActivityDate: streakData["lastActivityDate"] as? Date
+                lastActivityDate: Self.parseDate(streakData["lastActivityDate"])
             )
         } else {
             self.streakInfo = StreakInfo()
