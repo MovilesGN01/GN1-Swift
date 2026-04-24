@@ -19,7 +19,7 @@ struct CommunityView: View {
                 
                 VStack(spacing: 0) {
                     VStack(spacing: 8) {
-                        Text("Community & Gamification")
+                        Text("Community")
                             .font(.custom("Poppins-Bold", size: 24))
                             .foregroundColor(.textPrimary)
                             .frame(maxWidth: .infinity, alignment: .leading)

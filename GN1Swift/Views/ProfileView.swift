@@ -22,7 +22,8 @@ struct ProfileView: View {
                     .font(.custom("Poppins-Bold", size: 24))
                 
                 // GAMIFICATION SUMMARY SECTION
-                if let gamification = gamificationVM.gamification {
+                if let gamification = gamificationVM.gamification,
+                   gamification.points > 0 || gamification.unlockedBadgesCount > 0 || gamification.streakInfo.currentStreak > 0 {
                     VStack(spacing: 12) {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {

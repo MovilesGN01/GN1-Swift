@@ -154,7 +154,10 @@ final class AppFacade: AppFacadeType {
 
             self.cloudFunctionsService.createUserDocument { success in
                 if success {
-                    completion(.success)
+                    // Initialize gamification profile for new user
+                    self.fetchGamificationProfile(userId: userId) { _ in
+                        completion(.success)
+                    }
                 } else {
                     completion(.failure(message: "Error creating user profile"))
                 }
