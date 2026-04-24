@@ -18,20 +18,37 @@ class GamificationViewModel: ObservableObject {
     func loadGamificationProfile() {
         guard let userId = Auth.auth().currentUser?.uid else {
             errorMessage = "User not authenticated"
+            // Try to load from cache for offline support
+            if let cached = GamificationCacheManager.shared.loadCachedProfile() {
+                self.gamification = cached
+            }
             return
         }
         
         isLoading = true
         errorMessage = nil
         
+        // Try to load from cache first (for immediate UI display)
+        if let cached = GamificationCacheManager.shared.loadCachedProfile() {
+            DispatchQueue.main.async {
+                self.gamification = cached
+            }
+        }
+        
+        // Fetch fresh data from cloud
         facade.fetchGamificationProfile(userId: userId) { [weak self] profile in
             DispatchQueue.main.async {
                 self?.isLoading = false
                 if let profile = profile {
                     self?.gamification = profile
+                    GamificationCacheManager.shared.saveProfile(profile)
                 } else {
-                    // Initialize default gamification if not exists
-                    self?.gamification = UserGamification(userId: userId)
+                    // Use cached or create default
+                    if let cached = GamificationCacheManager.shared.loadCachedProfile() {
+                        self?.gamification = cached
+                    } else {
+                        self?.gamification = UserGamification(userId: userId)
+                    }
                 }
             }
         }
@@ -39,10 +56,27 @@ class GamificationViewModel: ObservableObject {
     
     func loadTopPlayers() {
         isLoading = true
+        
+        // Try to load from cache first
+        if let cached = GamificationCacheManager.shared.loadCachedLeaderboard() {
+            DispatchQueue.main.async {
+                self.topPlayers = cached
+            }
+        }
+        
+        // Fetch fresh data
         facade.fetchLeaderboard { [weak self] players in
             DispatchQueue.main.async {
                 self?.isLoading = false
-                self?.topPlayers = players
+                if !players.isEmpty {
+                    self?.topPlayers = players
+                    GamificationCacheManager.shared.saveLeaderboard(players)
+                } else {
+                    // Use cached if fresh fetch failed
+                    if let cached = GamificationCacheManager.shared.loadCachedLeaderboard() {
+                        self?.topPlayers = cached
+                    }
+                }
             }
         }
     }
