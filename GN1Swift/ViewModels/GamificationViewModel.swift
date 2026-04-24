@@ -18,9 +18,13 @@ class GamificationViewModel: ObservableObject {
     func loadGamificationProfile() {
         guard let userId = Auth.auth().currentUser?.uid else {
             errorMessage = "User not authenticated"
-            // Try to load from cache for offline support
-            if let cached = GamificationCacheManager.shared.loadCachedProfile() {
-                self.gamification = cached
+            // Try to load from memory cache, then disk cache for offline support
+            if let memCached = GamificationMemoryCache.shared.getProfile(forKey: userId) {
+                self.gamification = memCached
+                return
+            }
+            if let diskCached = GamificationCacheManager.shared.loadCachedProfile() {
+                self.gamification = diskCached
             }
             return
         }
@@ -28,11 +32,26 @@ class GamificationViewModel: ObservableObject {
         isLoading = true
         errorMessage = nil
         
-        // Try to load from cache first (for immediate UI display)
-        if let cached = GamificationCacheManager.shared.loadCachedProfile() {
+        // L1: Try memory cache first (instant)
+        if let memCached = GamificationMemoryCache.shared.getProfile(forKey: userId) {
             DispatchQueue.main.async {
-                self.gamification = cached
+                self.gamification = memCached
             }
+        } else if let diskCached = GamificationCacheManager.shared.loadCachedProfile() {
+            DispatchQueue.main.async {
+                self.gamification = diskCached
+            }
+        }
+        
+        // Check if cache is still valid (smart invalidation)
+        let cacheValid = GamificationCacheInvalidation.shared.isProfileCacheValid()
+        
+        if cacheValid {
+            // Cache is fresh enough, no need to fetch
+            DispatchQueue.main.async {
+                self?.isLoading = false
+            }
+            return
         }
         
         // Fetch fresh data from cloud
@@ -40,12 +59,23 @@ class GamificationViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self?.isLoading = false
                 if let profile = profile {
-                    self?.gamification = profile
+                    // Check if profile actually changed before updating
+                    let hasChanged = GamificationCacheInvalidation.shared.hasProfileChanged(profile)
+                    
+                    if hasChanged {
+                        self?.gamification = profile
+                    }
+                    
+                    // Cache in all levels
+                    GamificationMemoryCache.shared.setProfile(profile, forKey: userId)
                     GamificationCacheManager.shared.saveProfile(profile)
+                    GamificationCacheInvalidation.shared.saveProfileMetadata(profile)
                 } else {
                     // Use cached or create default
-                    if let cached = GamificationCacheManager.shared.loadCachedProfile() {
-                        self?.gamification = cached
+                    if let memCached = GamificationMemoryCache.shared.getProfile(forKey: userId) {
+                        self?.gamification = memCached
+                    } else if let diskCached = GamificationCacheManager.shared.loadCachedProfile() {
+                        self?.gamification = diskCached
                     } else {
                         self?.gamification = UserGamification(userId: userId)
                     }
@@ -57,11 +87,26 @@ class GamificationViewModel: ObservableObject {
     func loadTopPlayers() {
         isLoading = true
         
-        // Try to load from cache first
-        if let cached = GamificationCacheManager.shared.loadCachedLeaderboard() {
+        // L1: Try memory cache first (instant)
+        if let memCached = GamificationMemoryCache.shared.getLeaderboard() {
             DispatchQueue.main.async {
-                self.topPlayers = cached
+                self.topPlayers = memCached
             }
+        } else if let diskCached = GamificationCacheManager.shared.loadCachedLeaderboard() {
+            DispatchQueue.main.async {
+                self.topPlayers = diskCached
+            }
+        }
+        
+        // Check if cache is still valid (smart invalidation)
+        let cacheValid = GamificationCacheInvalidation.shared.isLeaderboardCacheValid()
+        
+        if cacheValid {
+            // Cache is fresh enough, no need to fetch
+            DispatchQueue.main.async {
+                self?.isLoading = false
+            }
+            return
         }
         
         // Fetch fresh data
@@ -69,15 +114,28 @@ class GamificationViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self?.isLoading = false
                 if !players.isEmpty {
-                    self?.topPlayers = players
+                    // Check if leaderboard actually changed before updating
+                    let hasChanged = GamificationCacheInvalidation.shared.hasLeaderboardChanged(players)
+                    
+                    if hasChanged {
+                        self?.topPlayers = players
+                    }
+                    
+                    // Cache in all levels
+                    GamificationMemoryCache.shared.setLeaderboard(players)
                     GamificationCacheManager.shared.saveLeaderboard(players)
+                    GamificationCacheInvalidation.shared.saveLeaderboardMetadata(players)
                 } else {
                     // Use cached if fresh fetch failed
-                    if let cached = GamificationCacheManager.shared.loadCachedLeaderboard() {
-                        self?.topPlayers = cached
+                    if let memCached = GamificationMemoryCache.shared.getLeaderboard() {
+                        self?.topPlayers = memCached
+                    } else if let diskCached = GamificationCacheManager.shared.loadCachedLeaderboard() {
+                        self?.topPlayers = diskCached
                     }
                 }
             }
+        }
+    }
         }
     }
     
