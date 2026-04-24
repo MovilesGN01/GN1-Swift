@@ -30,12 +30,12 @@ class GamificationViewModel: ObservableObject {
         
         // L1: Try memory cache first (instant)
         if let memCached = GamificationMemoryCache.shared.getProfile(forKey: userId) {
-            DispatchQueue.main.async {
-                self.gamification = memCached
+            DispatchQueue.main.async { [weak self] in
+                self?.gamification = memCached
             }
         } else if let diskCached = GamificationCacheManager.shared.loadCachedProfile() {
-            DispatchQueue.main.async {
-                self.gamification = diskCached
+            DispatchQueue.main.async { [weak self] in
+                self?.gamification = diskCached
             }
         }
         
@@ -44,7 +44,7 @@ class GamificationViewModel: ObservableObject {
         
         if cacheValid {
             // Cache is fresh enough, no need to fetch
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
                 self?.isLoading = false
             }
             return
@@ -85,12 +85,12 @@ class GamificationViewModel: ObservableObject {
         
         // L1: Try memory cache first (instant)
         if let memCached = GamificationMemoryCache.shared.getLeaderboard() {
-            DispatchQueue.main.async {
-                self.topPlayers = memCached
+            DispatchQueue.main.async { [weak self] in
+                self?.topPlayers = memCached
             }
         } else if let diskCached = GamificationCacheManager.shared.loadCachedLeaderboard() {
-            DispatchQueue.main.async {
-                self.topPlayers = diskCached
+            DispatchQueue.main.async { [weak self] in
+                self?.topPlayers = diskCached
             }
         }
         
@@ -99,7 +99,7 @@ class GamificationViewModel: ObservableObject {
         
         if cacheValid {
             // Cache is fresh enough, no need to fetch
-            DispatchQueue.main.async {
+            DispatchQueue.main.async { [weak self] in
                 self?.isLoading = false
             }
             return
