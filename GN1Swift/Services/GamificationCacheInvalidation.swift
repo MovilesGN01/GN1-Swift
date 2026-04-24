@@ -48,8 +48,7 @@ class GamificationCacheInvalidation {
             profileHash: hash,
             leaderboardHash: metadata.leaderboardHash,
             profileTimestamp: Date().timeIntervalSince1970,
-            leaderboardTimestamp: metadata.leaderboardTimestamp,
-            version: metadata.version
+            leaderboardTimestamp: metadata.leaderboardTimestamp
         )
         
         persistMetadata(metadata)
@@ -68,8 +67,7 @@ class GamificationCacheInvalidation {
             profileHash: metadata.profileHash,
             leaderboardHash: hash,
             profileTimestamp: metadata.profileTimestamp,
-            leaderboardTimestamp: Date().timeIntervalSince1970,
-            version: metadata.version
+            leaderboardTimestamp: Date().timeIntervalSince1970
         )
         
         persistMetadata(metadata)
