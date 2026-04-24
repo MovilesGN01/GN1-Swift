@@ -26,7 +26,10 @@ struct RideDetailView: View {
         .background(Color.backgroundApp)
         .navigationTitle("Ride Details")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { viewModel.checkExistingRequest() }
+        .onAppear {
+            viewModel.checkExistingRequest()
+            viewModel.loadDriverGender()
+        }
         .alert("Ride Reserved!", isPresented: $viewModel.requestSuccess) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -64,6 +67,11 @@ struct RideDetailView: View {
                         Image(systemName: "star.fill").foregroundColor(.yellow).font(.system(size: 13))
                         Text(String(format: "%.1f", ride.driverRating))
                             .font(.custom("Poppins-Regular", size: 14))
+                            .foregroundColor(.textSecondary)
+                    }
+                    if let gender = viewModel.driverGender {
+                        Text("Driver: \(gender.capitalized)")
+                            .font(.custom("Poppins-Regular", size: 13))
                             .foregroundColor(.textSecondary)
                     }
                 }

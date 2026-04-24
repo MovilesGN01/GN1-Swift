@@ -33,6 +33,11 @@ struct CreateRideView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "")
             }
+            .alert("Saved Offline", isPresented: $viewModel.rideSavedOffline) {
+                Button("OK") { dismiss() }
+            } message: {
+                Text("You're offline. Your ride has been saved and will sync automatically when connectivity is restored.")
+            }
             .navigationDestination(isPresented: $navigateToRequests) {
                 if let rideId = viewModel.createdRideId {
                     DriverRequestsView(rideId: rideId)
@@ -145,6 +150,9 @@ struct CreateRideView: View {
                 TextField("Zone (e.g. Norte, Sur, Centro)", text: $viewModel.zone)
                     .font(.custom("Poppins-Regular", size: 14))
                     .foregroundColor(.textPrimary)
+                    .onChange(of: viewModel.zone) { _, newValue in
+                        if newValue.count > 30 { viewModel.zone = String(newValue.prefix(30)) }
+                    }
             }
             .inputStyle()
 
@@ -186,6 +194,37 @@ struct CreateRideView: View {
                 .background(Color.surfaceCard)
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.borderLine, lineWidth: 1))
                 .cornerRadius(12)
+            }
+
+            // Price
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Price per seat (COP)")
+                    .font(.custom("Poppins-SemiBold", size: 13))
+                    .foregroundColor(.textSecondary)
+
+                HStack(spacing: 12) {
+                    Image(systemName: "dollarsign.circle")
+                        .foregroundColor(.placeholderMuted)
+                    TextField("e.g. 5000", text: $viewModel.priceText)
+                        .font(.custom("Poppins-Regular", size: 14))
+                        .foregroundColor(.textPrimary)
+                        .keyboardType(.decimalPad)
+                }
+                .padding(.horizontal, 12)
+                .frame(height: 52)
+                .background(Color.surfaceCard)
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(
+                    viewModel.priceText.isEmpty || viewModel.parsedPrice != nil
+                        ? Color.borderLine : Color.red,
+                    lineWidth: 1))
+                .cornerRadius(12)
+
+                if !viewModel.priceText.isEmpty && viewModel.parsedPrice == nil {
+                    Text("Enter a valid positive number.")
+                        .font(.custom("Poppins-Regular", size: 12))
+                        .foregroundColor(.red)
+                        .padding(.leading, 4)
+                }
             }
 
             // Create button

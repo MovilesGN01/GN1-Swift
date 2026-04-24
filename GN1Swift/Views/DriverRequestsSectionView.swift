@@ -99,27 +99,40 @@ struct DriverRequestsSectionView: View {
             }
 
             if request.status == "pending" {
+                let isProcessing = viewModel.processingRequestId == request.id
                 HStack(spacing: 10) {
                     Button { viewModel.reject(request) } label: {
-                        Text("Reject")
-                            .font(.custom("Poppins-SemiBold", size: 13))
-                            .foregroundColor(.red)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 40)
-                            .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.red.opacity(0.4), lineWidth: 1))
+                        Group {
+                            if isProcessing {
+                                ProgressView().tint(.red)
+                            } else {
+                                Text("Reject")
+                                    .font(.custom("Poppins-SemiBold", size: 13))
+                                    .foregroundColor(.red)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.red.opacity(0.4), lineWidth: 1))
                     }
+                    .disabled(isProcessing || viewModel.processingRequestId != nil)
 
-                    Button {
-                        viewModel.accept(request)
-                    } label: {
-                        Text("Accept")
-                            .font(.custom("Poppins-SemiBold", size: 13))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 40)
-                            .background(Color.primaryBrand)
-                            .cornerRadius(10)
+                    Button { viewModel.accept(request) } label: {
+                        Group {
+                            if isProcessing {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text("Accept")
+                                    .font(.custom("Poppins-SemiBold", size: 13))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .background(Color.primaryBrand)
+                        .cornerRadius(10)
                     }
+                    .disabled(isProcessing || viewModel.processingRequestId != nil)
                 }
             }
         }

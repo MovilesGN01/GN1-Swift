@@ -99,18 +99,24 @@ struct DriverRidesSectionView: View {
 
             // Action row
             HStack(spacing: 8) {
-                // "View Requests" is always available
-                Button { onTap(ride) } label: {
-                    HStack(spacing: 4) {
-                        Text("View Requests")
-                            .font(.custom("Poppins-SemiBold", size: 12))
-                            .foregroundColor(.primaryBrand)
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.primaryBrand)
+                // "View Requests" is only meaningful once the ride is live in Firebase.
+                if ride.status != "pending" {
+                    Button { onTap(ride) } label: {
+                        HStack(spacing: 4) {
+                            Text("View Requests")
+                                .font(.custom("Poppins-SemiBold", size: 12))
+                                .foregroundColor(.primaryBrand)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.primaryBrand)
+                        }
                     }
+                    .buttonStyle(PlainButtonStyle())
+                } else {
+                    Text("Will sync when online")
+                        .font(.custom("Poppins-Regular", size: 12))
+                        .foregroundColor(.placeholderMuted)
                 }
-                .buttonStyle(PlainButtonStyle())
 
                 Spacer()
 
@@ -140,9 +146,9 @@ struct DriverRidesSectionView: View {
 
     // MARK: - Helpers
 
-    /// "Start Ride" is available for rides that are open or full, but not yet started/completed.
+    /// "Start Ride" is available only for Firebase rides that are open or full.
     private func canStart(_ status: String) -> Bool {
-        status != "in_progress" && status != "completed"
+        status != "in_progress" && status != "completed" && status != "pending"
     }
 
     private func statusBadge(_ status: String) -> some View {
@@ -151,6 +157,7 @@ struct DriverRidesSectionView: View {
             case "in_progress": return ("In Progress", Color.primaryBrand)
             case "completed":   return ("Completed", .gray)
             case "full":        return ("Full", .orange)
+            case "pending":     return ("Pending", Color.orange)
             default:            return ("Active", .green)
             }
         }()
