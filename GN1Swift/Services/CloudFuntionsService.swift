@@ -10,6 +10,24 @@ enum RequestRideResult {
     case failure
 }
 
+struct SubmitRideRatingResult {
+    let success: Bool
+    let pointsAwarded: Int
+    let newLevel: Int?
+    let newTotalPoints: Int?
+    let badgeUnlocked: Badge?
+    let message: String?
+
+    static let failure = SubmitRideRatingResult(
+        success: false,
+        pointsAwarded: 0,
+        newLevel: nil,
+        newTotalPoints: nil,
+        badgeUnlocked: nil,
+        message: "Failed to submit rating"
+    )
+}
+
 // MARK: - Service
 
 final class CloudFunctionsService {
@@ -227,4 +245,81 @@ final class CloudFunctionsService {
             completion(reply)
         }
     }
+    
+    // MARK: - Gamification
+    
+    func fetchGamificationProfile(userId: String, completion: @escaping (UserGamification?) -> Void) {
+        functions.httpsCallable("getGamificationProfile").call(["userId": userId]) { result, error in
+            guard error == nil,
+                  let data = result?.data as? [String: Any] else {
+                completion(nil); return
+            }
+
+            // Supports both payload styles:
+            // 1) direct profile object
+            // 2) wrapped response { success, data }
+            let profilePayload = (data["data"] as? [String: Any]) ?? data
+            completion(UserGamification(from: profilePayload))
+        }
+    }
+    
+    func fetchLeaderboard(completion: @escaping ([UserGamification]) -> Void) {
+        functions.httpsCallable("getLeaderboard").call { result, error in
+            guard error == nil,
+                  let data = result?.data as? [String: Any],
+                  let playersData = data["players"] as? [[String: Any]] else {
+                completion([]); return
+            }
+            let players = playersData.compactMap { UserGamification(from: $0) }
+            completion(players)
+        }
+    }
+    
+    func submitRideRating(rideId: String, rating: Int, comment: String,
+                         completion: @escaping (SubmitRideRatingResult) -> Void) {
+        let payload: [String: Any] = [
+            "rideId": rideId,
+            "rating": rating,
+            "comment": comment
+        ]
+        functions.httpsCallable("submitRideRatingWithReward").call(payload) { result, error in
+            if let error = error {
+                completion(
+                    SubmitRideRatingResult(
+                        success: false,
+                        pointsAwarded: 0,
+                        newLevel: nil,
+                        newTotalPoints: nil,
+                        badgeUnlocked: nil,
+                        message: error.localizedDescription
+                    )
+                )
+                return
+            }
+
+            guard let data = result?.data as? [String: Any] else {
+                completion(.failure)
+                return
+            }
+
+            let badge: Badge? = {
+                guard let badgeData = data["badgeUnlocked"] as? [String: Any] else {
+                    return nil
+                }
+                return Badge(from: badgeData)
+            }()
+
+            completion(
+                SubmitRideRatingResult(
+                    success: (data["success"] as? Bool) ?? true,
+                    pointsAwarded: data["pointsAwarded"] as? Int ?? 0,
+                    newLevel: data["newLevel"] as? Int,
+                    newTotalPoints: data["newTotalPoints"] as? Int,
+                    badgeUnlocked: badge,
+                    message: data["message"] as? String
+                )
+            )
+        }
+    }
 }
+

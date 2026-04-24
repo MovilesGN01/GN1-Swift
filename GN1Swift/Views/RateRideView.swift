@@ -7,6 +7,9 @@ struct RateRideView: View {
     @State private var comment = ""
     @State private var isSubmitting = false
     @State private var didSubmit = false
+    @State private var rewardPoints = 0
+    @State private var unlockedBadgeName: String?
+    @State private var submitErrorMessage: String?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -21,6 +24,12 @@ struct RateRideView: View {
             } else {
                 Spacer()
                 ratingContent
+                if let submitErrorMessage {
+                    Text(submitErrorMessage)
+                        .font(.custom("Poppins-Regular", size: 12))
+                        .foregroundColor(.red)
+                        .padding(.horizontal, 24)
+                }
                 Spacer()
                 submitButton
             }
@@ -113,6 +122,20 @@ struct RateRideView: View {
                 .foregroundColor(.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
+
+            if rewardPoints > 0 {
+                Text("+\(rewardPoints) points earned")
+                    .font(.custom("Poppins-SemiBold", size: 14))
+                    .foregroundColor(.primaryBrand)
+            }
+
+            if let unlockedBadgeName {
+                Text("New badge unlocked: \(unlockedBadgeName)")
+                    .font(.custom("Poppins-Regular", size: 13))
+                    .foregroundColor(.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+            }
         }
     }
 
@@ -166,10 +189,18 @@ struct RateRideView: View {
 
     private func submitRating() {
         isSubmitting = true
-        FirestoreService.shared.saveRating(rideId: rideId, rating: selectedRating, comment: comment) { _ in
+        submitErrorMessage = nil
+
+        AppFacade.shared.submitRideRating(rideId: rideId, rating: selectedRating, comment: comment) { result in
             DispatchQueue.main.async {
                 isSubmitting = false
-                withAnimation { didSubmit = true }
+                if result.success {
+                    rewardPoints = result.pointsAwarded
+                    unlockedBadgeName = result.badgeUnlocked?.name
+                    withAnimation { didSubmit = true }
+                } else {
+                    submitErrorMessage = result.message ?? "Could not submit rating. Please try again."
+                }
             }
         }
     }

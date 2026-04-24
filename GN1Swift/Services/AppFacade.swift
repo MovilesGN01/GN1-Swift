@@ -216,4 +216,54 @@ final class AppFacade: AppFacadeType {
     func requestLocationPermissionAndStart() {
         locationService.requestPermissionAndStart()
     }
+
+    func registerUser(
+        name: String,
+        email: String,
+        password: String,
+        role: String,
+        carModel: String,
+        plate: String,
+        seats: Int?,
+        completion: @escaping (AuthFlowResult) -> Void
+    ) {
+        authService.register(email: email, password: password) { [weak self] userId in
+            guard let self = self, let userId = userId else {
+                completion(.failure(message: "Error creating account"))
+                return
+            }
+
+            self.session.userId = userId
+            self.session.email = email
+            self.session.name = name
+            self.session.role = role
+            self.session.carModel = carModel
+            self.session.plate = plate
+            self.session.seats = seats
+
+            self.cloudFunctionsService.createUserDocument { success in
+                if success {
+                    // Initialize gamification profile for new user
+                    self.fetchGamificationProfile(userId: userId) { _ in
+                        completion(.success)
+                    }
+                } else {
+                    completion(.failure(message: "Error creating user profile"))
+                }
+            }
+        }
+    }  
+  
+    func fetchGamificationProfile(userId: String, completion: @escaping (UserGamification?) -> Void) {
+        cloudFunctionsService.fetchGamificationProfile(userId: userId, completion: completion)
+    }
+    
+    func fetchLeaderboard(completion: @escaping ([UserGamification]) -> Void) {
+        cloudFunctionsService.fetchLeaderboard(completion: completion)
+    }
+    
+    func submitRideRating(rideId: String, rating: Int, comment: String,
+                         completion: @escaping (SubmitRideRatingResult) -> Void) {
+        cloudFunctionsService.submitRideRating(rideId: rideId, rating: rating, comment: comment, completion: completion)
+    }
 }

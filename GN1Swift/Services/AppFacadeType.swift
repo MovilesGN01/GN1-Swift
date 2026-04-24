@@ -60,4 +60,22 @@ protocol AppFacadeType {
     func fetchPassengerRequests(passengerId: String, completion: @escaping ([RideRequest]) -> Void)
     func fetchRideHistory(passengerId: String, completion: @escaping ([RideHistory]) -> Void)
     func requestLocationPermissionAndStart()
+    func registerUser(
+        name: String,
+        email: String,
+        password: String,
+        role: String,
+        carModel: String,
+        plate: String,
+        seats: Int?,
+        completion: @escaping (AuthFlowResult) -> Void
+    )
+    func fetchGamificationProfile(userId: String, completion: @escaping (UserGamification?) -> Void)
+    func fetchLeaderboard(completion: @escaping ([UserGamification]) -> Void)
+    func submitRideRating(
+        rideId: String,
+        rating: Int,
+        comment: String,
+        completion: @escaping (SubmitRideRatingResult) -> Void
+    )
 }
