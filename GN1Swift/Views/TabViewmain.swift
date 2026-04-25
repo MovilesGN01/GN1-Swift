@@ -2,37 +2,43 @@ import SwiftUI
 
 struct TabViewmain: View {
 
+    @Binding var isLoggedIn: Bool
     @State private var showChat = false
+    @State private var selectedTab = 0
 
     var body: some View {
 
         ZStack {
 
-            TabView {
+            TabView(selection: $selectedTab) {
 
                 HomeView()
                     .tabItem {
                         Image(systemName: "house.fill")
                         Text("Home")
                     }
+                    .tag(0)
 
-                RidesView()
+                RidesView(selectedTab: $selectedTab)
                     .tabItem {
                         Image(systemName: "car.fill")
                         Text("Rides")
                     }
+                    .tag(1)
 
                 CommunityView()
                     .tabItem {
                         Image(systemName: "person.3.fill")
                         Text("Community")
                     }
+                    .tag(2)
 
-                ProfileView()
+                ProfileView(isLoggedIn: $isLoggedIn)
                     .tabItem {
                         Image(systemName: "person.fill")
                         Text("Profile")
                     }
+                    .tag(3)
             }
             .tint(.primaryBrand)
 

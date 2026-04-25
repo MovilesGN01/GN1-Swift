@@ -8,17 +8,18 @@
 import SwiftUI
 
 struct WeatherBadge: View {
+    let weather: WeatherSnapshot
     
     var body: some View {
         HStack(spacing: 8) {
             
-            Image(systemName: "sun.max.fill")
+            Image(systemName: weather.conditionSymbol)
             
             VStack(alignment: .leading) {
-                Text("18°C")
+                Text(weather.temperatureText)
                     .font(.custom("Poppins-SemiBold", size: 14))
                 
-                Text("Sunny")
+                Text(weather.conditionText)
                     .font(.custom("Poppins-Regular", size: 12))
             }
         }

@@ -1,13 +1,8 @@
-//
-//  HeaderView.swift
-//  GN1Swift
-//
-//  Created by Cami Sánchez on 6/03/26.
-//
-
 import SwiftUI
 
 struct HeaderView: View {
+    let weather: WeatherSnapshot
+    let userName: String   // ← nuevo
     
     var body: some View {
         HStack {
@@ -24,7 +19,7 @@ struct HeaderView: View {
                     .font(.custom("Poppins-Regular", size: 16))
                     .foregroundColor(.textSecondary)
                 
-                Text("Camila")
+                Text(userName)   // ← dinámico
                     .font(.custom("Poppins-Bold", size: 24))
                 
                 HStack {
@@ -39,7 +34,7 @@ struct HeaderView: View {
             
             Spacer()
             
-            WeatherBadge()
+            WeatherBadge(weather: weather)
             
             Image(systemName: "bell")
                 .font(.title3)
