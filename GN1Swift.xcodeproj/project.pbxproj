@@ -13,6 +13,7 @@
 		C0D084642F801C5700891027 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = C0D084632F801C5700891027 /* FirebaseFirestore */; };
 		C0D084662F801C6900891027 /* FirebaseFunctions in Frameworks */ = {isa = PBXBuildFile; productRef = C0D084652F801C6900891027 /* FirebaseFunctions */; };
 		C0D084682F801C7300891027 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = C0D084672F801C7300891027 /* FirebaseCore */; };
+		C0D084792F801CA000891027 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = C0D084782F801CA000891027 /* FirebaseStorage */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -51,6 +52,7 @@
 				C0D084622F801C4D00891027 /* FirebaseAuth in Frameworks */,
 				C0D084682F801C7300891027 /* FirebaseCore in Frameworks */,
 				C0D084642F801C5700891027 /* FirebaseFirestore in Frameworks */,
+				C0D084792F801CA000891027 /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -107,6 +109,7 @@
 				C0D084632F801C5700891027 /* FirebaseFirestore */,
 				C0D084652F801C6900891027 /* FirebaseFunctions */,
 				C0D084672F801C7300891027 /* FirebaseCore */,
+				C0D084782F801CA000891027 /* FirebaseStorage */,
 			);
 			productName = "GN1-Swift";
 			productReference = DCAB6DB02F56A8D900CC52CB /* GN1Swift.app */;
@@ -299,7 +302,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = P3JRFAS7LF;
+				DEVELOPMENT_TEAM = 9R27534S36;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GN1Swift/Info.plist;
@@ -316,7 +319,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.camilosanchez.GN1-Swift";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.cdsantoyo.GN1-Swift";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -337,7 +340,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = P3JRFAS7LF;
+				DEVELOPMENT_TEAM = 9R27534S36;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = GN1Swift/Info.plist;
@@ -354,7 +357,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.camilosanchez.GN1-Swift";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.cdsantoyo.GN1-Swift";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -421,6 +424,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = C0D0845B2F8017B000891027 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCore;
+		};
+		C0D084782F801CA000891027 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C0D0845B2F8017B000891027 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
