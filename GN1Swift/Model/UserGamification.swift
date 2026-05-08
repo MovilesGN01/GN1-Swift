@@ -137,7 +137,7 @@ struct UserGamification: Codable {
     }
     
     init(from dict: [String: Any]) {
-        self.userId = dict["userId"] as? String ?? ""
+        self.userId = dict["userId"] as? String ?? dict["userID"] as? String ?? ""
         self.displayName = dict["displayName"] as? String ?? ""
         self.points = dict["points"] as? Int ?? 0
         self.level = dict["level"] as? Int ?? 1
