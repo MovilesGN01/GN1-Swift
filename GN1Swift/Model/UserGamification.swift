@@ -61,15 +61,16 @@ struct StreakInfo: Codable {
 
 struct UserGamification: Codable {
     let userId: String
+    var displayName: String = ""
     var points: Int = 0
     var level: Int = 1
     var totalXP: Int = 0
     var badges: [Badge] = []
     var streakInfo: StreakInfo = StreakInfo()
     var lastGamificationUpdate: Date = Date()
-    
+
     enum CodingKeys: String, CodingKey {
-        case userId, points, level, totalXP, badges
+        case userId, displayName, points, level, totalXP, badges
         case streakInfo, lastGamificationUpdate
     }
     
@@ -97,6 +98,7 @@ struct UserGamification: Codable {
 
     init(
         userId: String,
+        displayName: String = "",
         points: Int = 0,
         level: Int = 1,
         totalXP: Int = 0,
@@ -105,6 +107,7 @@ struct UserGamification: Codable {
         lastGamificationUpdate: Date = Date()
     ) {
         self.userId = userId
+        self.displayName = displayName
         self.points = points
         self.level = level
         self.totalXP = totalXP
@@ -135,6 +138,7 @@ struct UserGamification: Codable {
     
     init(from dict: [String: Any]) {
         self.userId = dict["userId"] as? String ?? ""
+        self.displayName = dict["displayName"] as? String ?? ""
         self.points = dict["points"] as? Int ?? 0
         self.level = dict["level"] as? Int ?? 1
         self.totalXP = dict["totalXP"] as? Int ?? 0

@@ -8,11 +8,23 @@ class GamificationViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var topPlayers: [UserGamification] = []
     @Published var recentAchievement: (badge: Badge, points: Int)? = nil
-    
+
     private let facade: AppFacadeType
-    
+    private var authListener: AuthStateDidChangeListenerHandle?
+
     init(facade: AppFacadeType = AppFacade.shared) {
         self.facade = facade
+        authListener = Auth.auth().addStateDidChangeListener { [weak self] _, user in
+            guard let self, user != nil else { return }
+            self.loadGamificationProfile()
+            self.loadTopPlayers()
+        }
+    }
+
+    deinit {
+        if let handle = authListener {
+            Auth.auth().removeStateDidChangeListener(handle)
+        }
     }
     
     func loadGamificationProfile() {
