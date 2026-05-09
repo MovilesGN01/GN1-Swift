@@ -37,6 +37,17 @@ class RideInProgressViewModel: ObservableObject {
             }
         }
         resolveAndFetchRoute()
+
+        // Mark the ride as in_progress if it hasn't been started yet.
+        // finishRide requires status == "in_progress", so this must happen
+        // before the driver taps Finish Ride.
+        if ride.status != "in_progress" {
+            CloudFunctionsService.shared.startRide(rideId: ride.id) { success in
+                if !success {
+                    print("[RideInProgressViewModel] startRide failed — finishRide may not work")
+                }
+            }
+        }
     }
 
     func stopListeningNow() { stopListening?() }
@@ -85,20 +96,12 @@ class RideInProgressViewModel: ObservableObject {
         isFinishing = true
         facade.finishRide(rideId: ride.id) { [weak self] success in
             guard let self = self else { return }
-            guard success else {
-                DispatchQueue.main.async {
-                    self.isFinishing = false
-                    self.errorMessage = "Failed to finish ride. Please try again."
-                }
-                return
-            }
-                // Write status directly so passenger listener always picks it up
-            self.facade.markRideRequestsCompleted(rideId: self.ride.id)
-            // Update analytics so getRideRecommendations has fresh data
-            self.facade.updateUserAnalytics {
-                DispatchQueue.main.async {
-                    self.isFinishing = false
+            DispatchQueue.main.async {
+                self.isFinishing = false
+                if success {
                     completion()
+                } else {
+                    self.errorMessage = "Failed to finish ride. Please try again."
                 }
             }
         }

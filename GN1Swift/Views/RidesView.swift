@@ -110,6 +110,14 @@ struct RidesView: View {
             }
             // Sheets
             .sheet(isPresented: $showCreateRide) { CreateRideView() }
+            .onChange(of: showCreateRide) { _, isShowing in
+                // Refresh pending rides immediately when the create sheet closes,
+                // without requiring the driver to leave and return to the tab.
+                if !isShowing && effectiveMode == .driver {
+                    driverVM.loadPendingRides()
+                    driverVM.syncAndRefresh()
+                }
+            }
             .sheet(isPresented: $showRecommendations) { RecommendationsView() }
             // Navigation destinations
             .navigationDestination(isPresented: $navigateToRideInProgress) {
@@ -400,8 +408,11 @@ struct RidesView: View {
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
+                    Text(String(format: "$%.0f", ride.price))
+                        .font(.custom("Poppins-SemiBold", size: 15))
+                        .foregroundColor(.primaryBrand)
                     Text("\(ride.seatsAvailable) seats")
-                        .font(.custom("Poppins-SemiBold", size: 13))
+                        .font(.custom("Poppins-Regular", size: 12))
                         .foregroundColor(.textPrimary)
                     Text(ride.zone)
                         .font(.custom("Poppins-Regular", size: 11))
@@ -416,7 +427,9 @@ struct RidesView: View {
                 || passengerVM.requestedRideIds.contains(ride.id)
             let isCompleted = passengerVM.completedRideIds.contains(ride.id)
             let isReserving = reservingRideId == ride.id
-            let isBlocked = alreadyRequested || isCompleted
+            let isOffline = passengerVM.isOffline
+            let isBlocked = alreadyRequested || isCompleted || isOffline
+
             Button {
                 guard !isReserving, !isBlocked else { return }
                 reservingRideId = ride.id
@@ -438,6 +451,14 @@ struct RidesView: View {
                 ZStack {
                     if isReserving {
                         ProgressView().tint(.white)
+                    } else if isOffline {
+                        HStack(spacing: 6) {
+                            Image(systemName: "wifi.slash")
+                                .font(.system(size: 12, weight: .semibold))
+                            Text("No connection to reserve")
+                                .font(.custom("Poppins-SemiBold", size: 13))
+                        }
+                        .foregroundColor(.secondary)
                     } else {
                         Text(isCompleted
                              ? "Ride completed"
@@ -450,7 +471,13 @@ struct RidesView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 40)
-                .background(isBlocked ? Color.placeholderMuted : Color.primaryBrand)
+                .background(
+                    isOffline
+                        ? Color(.systemGray5)
+                        : isBlocked
+                            ? Color.placeholderMuted
+                            : Color.primaryBrand
+                )
                 .cornerRadius(10)
             }
             .disabled(isBlocked || isReserving)

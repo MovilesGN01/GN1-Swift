@@ -25,6 +25,7 @@ class DriverRidesViewModel: ObservableObject {
     private let localSource = RideLocalDataSource()
     private var stopRidesListening: (() -> Void)?
     private var stopRequestsListening: (() -> Void)?
+    private var syncTimer: Timer?
 
     init(facade: AppFacadeType = AppFacade.shared) {
         self.facade = facade
@@ -52,6 +53,13 @@ class DriverRidesViewModel: ObservableObject {
         // Show pending rides immediately, then attempt sync in background.
         loadPendingRides()
         syncAndRefresh()
+
+        // Periodic sync: detects expired rides and new connections without
+        // requiring the driver to leave and return to the tab.
+        syncTimer?.invalidate()
+        syncTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            self?.syncAndRefresh()
+        }
     }
 
     /// Refreshes the pending-rides list from CoreData without triggering a sync.
@@ -86,11 +94,14 @@ class DriverRidesViewModel: ObservableObject {
     func stopListeningNow() {
         stopRidesListening?()
         stopRequestsListening?()
+        syncTimer?.invalidate()
+        syncTimer = nil
     }
 
     deinit {
         stopRidesListening?()
         stopRequestsListening?()
+        syncTimer?.invalidate()
     }
 
     // MARK: - Actions
