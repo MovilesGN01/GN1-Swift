@@ -299,8 +299,7 @@ struct HomeView: View {
     // MARK: - Weather (unchanged)
 
     private func loadWeatherFromCloud() {
-        CloudFunctionsService.shared.updateWeather()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        CloudFunctionsService.shared.updateWeather {
             FirestoreService.shared.loadWeather { data in
                 DispatchQueue.main.async {
                     guard let w = data else {
