@@ -19,6 +19,7 @@ struct RidesView: View {
     // Sheets / navigation
     @State private var showCreateRide = false
     @State private var showRecommendations = false
+    @State private var showSearch = false
     @State private var rideInProgress: Ride?
     @State private var navigateToRideInProgress = false
     @State private var selectedRide: Ride?
@@ -109,6 +110,9 @@ struct RidesView: View {
                 Text(driverVM.activeExpiredMessage ?? "")
             }
             // Sheets
+            .fullScreenCover(isPresented: $showSearch) {
+                SearchRidesView(rides: passengerVM.allRides)
+            }
             .sheet(isPresented: $showCreateRide) { CreateRideView() }
             .onChange(of: showCreateRide) { _, isShowing in
                 // Refresh pending rides immediately when the create sheet closes,
@@ -155,6 +159,16 @@ struct RidesView: View {
             }
 
             Spacer()
+
+            // Search — passenger only
+            if effectiveMode == .passenger {
+                Button { showSearch = true } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18))
+                        .foregroundColor(.primaryBrand)
+                        .frame(width: 36, height: 36)
+                }
+            }
 
             // Recommendations shortcut — passenger only
             if effectiveMode == .passenger {
