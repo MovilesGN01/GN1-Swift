@@ -32,7 +32,6 @@ final class RideLocalDataSource {
     /// Rides with status "pending" (locally created while offline) are preserved.
     /// Uses a background context so the main thread is never blocked.
     func saveRides(_ rides: [Ride]) async {
-        guard !rides.isEmpty else { return }
         let context = persistence.newBackgroundContext()
 
         await context.perform {
