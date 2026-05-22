@@ -66,6 +66,16 @@ final class CloudFunctionsService {
         functions.httpsCallable("weatherAwareRides").call { _, _ in }
     }
 
+    // MARK: - Analytics
+
+    func calculateTopZones(completion: @escaping () -> Void = {}) {
+        functions.httpsCallable("calculateTopZones").call { _, _ in completion() }
+    }
+
+    func calculatePeakHours(completion: @escaping () -> Void = {}) {
+        functions.httpsCallable("calculatePeakHours").call { _, _ in completion() }
+    }
+
     // MARK: - Rides — Passenger
 
     func getAllAvailableRides(completion: @escaping ([Ride]) -> Void) {
