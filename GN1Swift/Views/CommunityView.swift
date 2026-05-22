@@ -150,11 +150,14 @@ struct CommunityView: View {
                 } else {
                     ForEach(Array(viewModel.topPlayers.enumerated()), id: \.element.userId) { index, player in
                         let isCurrentUser = Auth.auth().currentUser?.uid == player.userId
-                        LeaderboardRowView(
-                            rank: index + 1,
-                            player: player,
-                            isCurrentUser: isCurrentUser
-                        )
+                        NavigationLink(destination: UserProfileView(player: player)) {
+                            LeaderboardRowView(
+                                rank: index + 1,
+                                player: player,
+                                isCurrentUser: isCurrentUser
+                            )
+                        }
+                        .buttonStyle(.plain)
                     }
                     .padding(.horizontal, 24)
                 }

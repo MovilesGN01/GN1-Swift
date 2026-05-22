@@ -70,6 +70,7 @@ protocol AppFacadeType {
         seats: Int?,
         completion: @escaping (AuthFlowResult) -> Void
     )
+    func reportUser(report: IncidentReport, completion: @escaping (Bool) -> Void)
     func fetchGamificationProfile(userId: String, completion: @escaping (UserGamification?) -> Void)
     func fetchLeaderboard(completion: @escaping ([UserGamification]) -> Void)
     func submitRideRating(
