@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 final class FavoritesViewModel: ObservableObject {
     @Published var favorites: [FavoriteRoute] = []
