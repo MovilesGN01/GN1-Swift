@@ -156,6 +156,7 @@ struct CommunityView: View {
                                 player: player,
                                 isCurrentUser: isCurrentUser
                             )
+                            .equatable()
                         }
                         .padding(.horizontal, 24)
                     }

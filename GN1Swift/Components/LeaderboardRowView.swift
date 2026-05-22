@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct LeaderboardRowView: View {
+struct LeaderboardRowView: View, Equatable {
     let rank: Int
     let player: UserGamification
     let isCurrentUser: Bool

@@ -1,7 +1,7 @@
 import Foundation
 import FirebaseFirestore
 
-struct Badge: Identifiable, Codable {
+struct Badge: Identifiable, Codable, Equatable {
     let id: String
     let name: String
     let description: String
@@ -47,7 +47,7 @@ struct Badge: Identifiable, Codable {
     }
 }
 
-struct StreakInfo: Codable {
+struct StreakInfo: Codable, Equatable {
     var currentStreak: Int = 0
     var longestStreak: Int = 0
     var lastActivityDate: Date?
@@ -59,7 +59,7 @@ struct StreakInfo: Codable {
     }
 }
 
-struct UserGamification: Codable {
+struct UserGamification: Codable, Equatable {
     let userId: String
     var displayName: String = ""
     var points: Int = 0
