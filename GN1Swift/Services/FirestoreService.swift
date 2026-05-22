@@ -37,6 +37,16 @@ final class FirestoreService {
         }
     }
 
+    /// Fetches the full user_analytics document and maps it to a UserAnalytics struct.
+    func fetchUserAnalyticsFull(userId: String, completion: @escaping (UserAnalytics?) -> Void) {
+        db.collection("user_analytics").document(userId).getDocument { snapshot, _ in
+            guard let data = snapshot?.data() else { completion(nil); return }
+            var d = data
+            d["userId"] = userId
+            completion(UserAnalytics(from: d))
+        }
+    }
+
     /// Reads user_analytics/{userId}.recommendedRides (array of ride IDs),
     /// then fetches each ride from the rides collection in parallel.
     func fetchRecommendedRides(userId: String, completion: @escaping ([Ride]) -> Void) {

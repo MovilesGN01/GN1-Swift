@@ -62,8 +62,8 @@ final class CloudFunctionsService {
 
     // MARK: - Weather
 
-    func updateWeather() {
-        functions.httpsCallable("weatherAwareRides").call { _, _ in }
+    func updateWeather(completion: @escaping () -> Void = {}) {
+        functions.httpsCallable("weatherAwareRides").call { _, _ in completion() }
     }
 
     // MARK: - Rides — Passenger

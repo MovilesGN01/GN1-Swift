@@ -23,23 +23,13 @@ struct LeaderboardRowView: View {
             
             // User Info
             VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("Level \(player.level)")
-                        .font(.custom("Poppins-SemiBold", size: 14))
-                        .foregroundColor(.primaryBrand)
-                    
-                    Spacer()
-                }
-                
-                if isCurrentUser {
-                    Text("You")
-                        .font(.custom("Poppins-Regular", size: 12))
-                        .foregroundColor(.textSecondary)
-                } else {
-                    Text("\(player.unlockedBadgesCount) badges")
-                        .font(.custom("Poppins-Regular", size: 12))
-                        .foregroundColor(.textSecondary)
-                }
+                Text(isCurrentUser ? "You" : (player.displayName.isEmpty ? "User" : player.displayName))
+                    .font(.custom("Poppins-SemiBold", size: 14))
+                    .foregroundColor(.textPrimary)
+
+                Text("Lv.\(player.level) · \(player.unlockedBadgesCount) badges")
+                    .font(.custom("Poppins-Regular", size: 12))
+                    .foregroundColor(.textSecondary)
             }
             
             Spacer()
