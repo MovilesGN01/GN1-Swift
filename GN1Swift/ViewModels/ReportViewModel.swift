@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 enum ReportSubmissionState: Equatable {
     case idle
