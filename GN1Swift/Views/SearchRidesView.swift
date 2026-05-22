@@ -134,7 +134,7 @@ struct SearchRidesView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 38))
                 .foregroundColor(.placeholderMuted)
-            Text(vm.query.isEmpty ? "Start typing to search" : "No rides match "\(vm.query)"")
+            Text(vm.query.isEmpty ? "Start typing to search" : "No rides match \"\(vm.query)\"")
                 .font(.custom("Poppins-SemiBold", size: 15))
                 .foregroundColor(.textPrimary)
                 .multilineTextAlignment(.center)
