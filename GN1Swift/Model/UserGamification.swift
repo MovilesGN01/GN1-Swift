@@ -142,7 +142,7 @@ struct UserGamification: Codable, Equatable {
         self.points = dict["points"] as? Int ?? 0
         self.level = dict["level"] as? Int ?? 1
         self.totalXP = dict["totalXP"] as? Int ?? 0
-        self.lastGamificationUpdate = Self.parseDate(dict["lastGamificationUpdate"]) ?? Date()
+        self.lastGamificationUpdate = Self.parseDate(dict["lastGamificationUpdate"]) ?? Date(timeIntervalSince1970: 0)
         
         // Parse badges
         if let badgesData = dict["badges"] as? [[String: Any]] {

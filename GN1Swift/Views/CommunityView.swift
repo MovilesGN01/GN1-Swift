@@ -39,7 +39,7 @@ struct CommunityView: View {
                     .padding(.horizontal, 24)
                     .padding(.bottom, 16)
                     
-                    if viewModel.isLoading {
+                    if viewModel.isLoading && viewModel.gamification == nil && viewModel.topPlayers.isEmpty {
                         Spacer()
                         ProgressView()
                         Spacer()
@@ -101,6 +101,7 @@ struct CommunityView: View {
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 12) {
                                 ForEach(gamification.badges) { badge in
                                     BadgeView(badge: badge)
+                                        .equatable()
                                 }
                             }
                             .padding(.horizontal, 4)

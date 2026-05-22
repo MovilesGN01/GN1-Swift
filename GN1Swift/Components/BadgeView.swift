@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct BadgeView: View {
+struct BadgeView: View, Equatable {
     let badge: Badge
     let size: CGFloat = 80
     
