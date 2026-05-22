@@ -76,6 +76,42 @@ final class FirestoreService {
         }
     }
 
+    // MARK: - Analytics Cache
+
+    func fetchZoneAnalytics(completion: @escaping (CachedZoneAnalytics?) -> Void) {
+        db.collection("analytics_cache").document("topZones").getDocument { snapshot, _ in
+            guard let data = snapshot?.data() else { completion(nil); return }
+            let zones = data["zones"] as? [String: Int] ?? [:]
+            let mostDemanded = data["mostDemandedZone"] as? String ?? ""
+            completion(CachedZoneAnalytics(zones: zones, mostDemandedZone: mostDemanded))
+        }
+    }
+
+    func fetchPeakHoursAnalytics(completion: @escaping (CachedPeakHoursAnalytics?) -> Void) {
+        db.collection("analytics_cache").document("peakHours").getDocument { snapshot, _ in
+            guard let data = snapshot?.data() else { completion(nil); return }
+            // JS for..in yields string keys — normalize to [Int: Int]
+            let rawHours = data["hours"] as? [String: Int] ?? [:]
+            let hours = Dictionary(uniqueKeysWithValues: rawHours.compactMap { k, v -> (Int, Int)? in
+                guard let h = Int(k) else { return nil }
+                return (h, v)
+            })
+            let morningPeak: Int?
+            if let mp = data["morningPeak"] as? Int { morningPeak = mp }
+            else if let mp = data["morningPeak"] as? String { morningPeak = Int(mp) }
+            else { morningPeak = nil }
+
+            let eveningPeak: Int?
+            if let ep = data["eveningPeak"] as? Int { eveningPeak = ep }
+            else if let ep = data["eveningPeak"] as? String { eveningPeak = Int(ep) }
+            else { eveningPeak = nil }
+
+            completion(CachedPeakHoursAnalytics(hours: hours,
+                                                 morningPeak: morningPeak,
+                                                 eveningPeak: eveningPeak))
+        }
+    }
+
     // MARK: - Weather
 
     func loadWeather(completion: @escaping (WeatherData?) -> Void) {

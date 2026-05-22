@@ -19,6 +19,8 @@ struct RidesView: View {
     // Sheets / navigation
     @State private var showCreateRide = false
     @State private var showRecommendations = false
+    @State private var showSearch = false
+    @State private var showFilters = false
     @State private var rideInProgress: Ride?
     @State private var navigateToRideInProgress = false
     @State private var selectedRide: Ride?
@@ -109,6 +111,18 @@ struct RidesView: View {
                 Text(driverVM.activeExpiredMessage ?? "")
             }
             // Sheets
+            .fullScreenCover(isPresented: $showSearch) {
+                SearchRidesView(rides: passengerVM.allRides)
+            }
+            .sheet(isPresented: $showFilters) {
+                RideFilterSheet(
+                    zones: passengerVM.zones,
+                    selectedZone: $passengerVM.selectedZone,
+                    minSeats: $passengerVM.minSeats,
+                    minRating: $passengerVM.minRating
+                )
+                .presentationDetents([.medium, .large])
+            }
             .sheet(isPresented: $showCreateRide) { CreateRideView() }
             .onChange(of: showCreateRide) { _, isShowing in
                 // Refresh pending rides immediately when the create sheet closes,
@@ -155,6 +169,16 @@ struct RidesView: View {
             }
 
             Spacer()
+
+            // Search — passenger only
+            if effectiveMode == .passenger {
+                Button { showSearch = true } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18))
+                        .foregroundColor(.primaryBrand)
+                        .frame(width: 36, height: 36)
+                }
+            }
 
             // Recommendations shortcut — passenger only
             if effectiveMode == .passenger {
@@ -205,13 +229,9 @@ struct RidesView: View {
 
     @ViewBuilder
     private var passengerContent: some View {
-        // --- Filter card ---
-        filterCard
-            .padding(.horizontal, 16)
+        // --- Filter bar ---
+        filterBar
             .padding(.top, 8)
-
-        ratingChipsRow
-            .padding(.top, 12)
 
         // --- Available Rides ---
         sectionLabel("ALL AVAILABLE RIDES", color: .placeholderMuted)
@@ -295,89 +315,75 @@ struct RidesView: View {
         DriverRequestsSectionView(viewModel: driverVM)
     }
 
-    // MARK: - Filter Card (Passenger)
+    // MARK: - Filter Bar
 
-    private var filterCard: some View {
-        VStack(spacing: 12) {
-            Menu {
-                ForEach(passengerVM.zones, id: \.self) { zone in
-                    Button(zone) { passengerVM.selectedZone = zone }
-                }
-            } label: {
-                HStack {
-                    Text("Zone:")
-                        .font(.custom("Poppins-Regular", size: 13))
-                        .foregroundColor(.placeholderMuted)
-                    Text(passengerVM.selectedZone)
-                        .font(.custom("Poppins-SemiBold", size: 13))
-                        .foregroundColor(.textPrimary)
-                    Spacer()
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 12))
-                        .foregroundColor(.placeholderMuted)
-                }
-                .padding()
-                .background(Color.surfaceCard)
-                .cornerRadius(10)
-            }
-
-            HStack(spacing: 12) {
-                HStack(spacing: 6) {
-                    Image(systemName: "person.2")
-                        .foregroundColor(.placeholderMuted)
-                        .font(.system(size: 13))
-                    Text("Min seats:")
-                        .font(.custom("Poppins-Regular", size: 12))
-                        .foregroundColor(.placeholderMuted)
-                    Text("\(passengerVM.minSeats)")
-                        .font(.custom("Poppins-SemiBold", size: 13))
-                        .foregroundColor(.textPrimary)
-                        .frame(minWidth: 16)
-                    Stepper("", value: $passengerVM.minSeats, in: 1...8)
-                        .labelsHidden()
-                }
-                Spacer()
-                Button { passengerVM.applyFilters() } label: {
-                    Text("Search")
-                        .font(.custom("Poppins-SemiBold", size: 13))
-                        .foregroundColor(.white)
-                        .frame(width: 80, height: 36)
-                        .background(Color.primaryBrand)
-                        .cornerRadius(8)
-                }
-            }
-        }
-        .padding(16)
-        .background(Color.surfaceCard)
-        .cornerRadius(12)
+    private var hasActiveFilters: Bool {
+        passengerVM.selectedZone != "All" || passengerVM.minSeats > 1 || passengerVM.minRating > 0
     }
 
-    // MARK: - Rating Chips
-
-    private var ratingChipsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(ratingFilters, id: \.label) { filter in
-                    let isActive = passengerVM.minRating == filter.value
-                    Button { passengerVM.minRating = filter.value } label: {
-                        Text(filter.label)
-                            .font(.custom("Poppins-SemiBold", size: 13))
-                            .foregroundColor(isActive ? .white : .textPrimary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(isActive ? Color.primaryBrand : Color.backgroundApp)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(isActive ? Color.primaryBrand : Color.borderLine, lineWidth: 1)
-                            )
-                            .cornerRadius(20)
+    private var filterBar: some View {
+        HStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    if !hasActiveFilters {
+                        Text("All rides")
+                            .font(.custom("Poppins-Regular", size: 13))
+                            .foregroundColor(.placeholderMuted)
+                    } else {
+                        if passengerVM.selectedZone != "All" {
+                            activeChip(passengerVM.selectedZone) {
+                                passengerVM.selectedZone = "All"
+                            }
+                        }
+                        if passengerVM.minSeats > 1 {
+                            activeChip("\(passengerVM.minSeats)+ seats") {
+                                passengerVM.minSeats = 1
+                            }
+                        }
+                        if passengerVM.minRating > 0 {
+                            activeChip(String(format: "%.1f★", passengerVM.minRating)) {
+                                passengerVM.minRating = 0
+                            }
+                        }
                     }
                 }
+                .padding(.leading, 16)
+                .padding(.vertical, 4)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 4)
+
+            Button { showFilters = true } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(hasActiveFilters ? .white : .primaryBrand)
+                    .frame(width: 38, height: 38)
+                    .background(hasActiveFilters ? Color.primaryBrand : Color.surfaceCard)
+                    .overlay(RoundedRectangle(cornerRadius: 10)
+                        .stroke(hasActiveFilters ? Color.clear : Color.borderLine, lineWidth: 1))
+                    .cornerRadius(10)
+            }
+            .padding(.trailing, 16)
+            .padding(.leading, 8)
         }
-        .frame(height: 44)
+        .frame(height: 50)
+    }
+
+    private func activeChip(_ text: String, onRemove: @escaping () -> Void) -> some View {
+        HStack(spacing: 5) {
+            Text(text)
+                .font(.custom("Poppins-SemiBold", size: 12))
+                .foregroundColor(.primaryBrand)
+            Button(action: onRemove) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.primaryBrand)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.primaryBrand.opacity(0.1))
+        .overlay(RoundedRectangle(cornerRadius: 20)
+            .stroke(Color.primaryBrand.opacity(0.35), lineWidth: 1))
+        .cornerRadius(20)
     }
 
     // MARK: - Ride Card (Passenger marketplace)
