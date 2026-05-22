@@ -12,7 +12,6 @@ struct ProfileView: View {
     @State private var appeared = false
 
     var body: some View {
-        NavigationStack {
         ZStack {
             Color(.systemGroupedBackground).ignoresSafeArea()
 
@@ -30,11 +29,8 @@ struct ProfileView: View {
                     PerformanceCard(viewModel: viewModel)
                         .fadeSlide(appeared: appeared, delay: 0.17)
 
-                    ProfileQuickLinksCard()
-                        .fadeSlide(appeared: appeared, delay: 0.22)
-
                     ProfileLogoutButton(action: logout)
-                        .fadeSlide(appeared: appeared, delay: 0.29)
+                        .fadeSlide(appeared: appeared, delay: 0.24)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
@@ -63,7 +59,6 @@ struct ProfileView: View {
             viewModel.loadProfile()
             withAnimation(.easeOut(duration: 0.5)) { appeared = true }
         }
-        } // NavigationStack
     }
 
     private func logout() {
@@ -449,60 +444,6 @@ private struct OfflineBanner: View {
         )
         .cornerRadius(18)
         .shadow(color: Color.orange.opacity(0.32), radius: 10, x: 0, y: 5)
-    }
-}
-
-// MARK: - Quick Links (Wallet & Help Center)
-
-private struct ProfileQuickLinksCard: View {
-    var body: some View {
-        VStack(spacing: 0) {
-            NavigationLink(destination: WalletView()) {
-                quickLinkRow(icon: "wallet.pass.fill",
-                             title: "Wallet",
-                             subtitle: "Balance, transactions & payment methods")
-            }
-            .buttonStyle(.plain)
-
-            Divider().padding(.horizontal, 16)
-
-            NavigationLink(destination: HelpCenterView()) {
-                quickLinkRow(icon: "questionmark.circle.fill",
-                             title: "Help Center",
-                             subtitle: "FAQ & support tickets")
-            }
-            .buttonStyle(.plain)
-        }
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 4)
-    }
-
-    private func quickLinkRow(icon: String, title: String, subtitle: String) -> some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(Color.primaryBrand.opacity(0.13))
-                    .frame(width: 40, height: 40)
-                Image(systemName: icon)
-                    .font(.system(size: 17))
-                    .foregroundColor(.primaryBrand)
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.custom("Poppins-SemiBold", size: 14))
-                    .foregroundColor(.textPrimary)
-                Text(subtitle)
-                    .font(.custom("Poppins-Regular", size: 11))
-                    .foregroundColor(.textSecondary)
-            }
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.primaryBrand.opacity(0.5))
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
     }
 }
 
