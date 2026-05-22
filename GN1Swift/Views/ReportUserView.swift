@@ -3,6 +3,7 @@ import SwiftUI
 struct ReportUserView: View {
     let reportedUserId: String
     let reportedUserName: String
+    let source: ReportSource
 
     @StateObject private var viewModel = ReportViewModel()
     @Environment(\.dismiss) private var dismiss
@@ -12,53 +13,101 @@ struct ReportUserView: View {
             || viewModel.state == .loading
     }
 
+    private var isSuccess: Bool {
+        if case .success = viewModel.state { return true }
+        return false
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.backgroundApp.ignoresSafeArea()
 
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        Text("Tu reporte será revisado por el equipo de UniRide. Provee información precisa para que podamos actuar.")
-                            .font(.custom("Poppins-Regular", size: 13))
-                            .foregroundColor(.textSecondary)
-                            .padding(.horizontal, 24)
-
-                        categorySection
-                        descriptionSection
-
-                        if case .failure(let msg) = viewModel.state {
-                            Text(msg)
-                                .font(.custom("Poppins-Regular", size: 12))
-                                .foregroundColor(.red)
+                if isSuccess {
+                    successView
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
+                            Text("Your report will be reviewed by the UniRide team. Please provide accurate information so we can take action.")
+                                .font(.custom("Poppins-Regular", size: 13))
+                                .foregroundColor(.textSecondary)
                                 .padding(.horizontal, 24)
-                        }
 
-                        submitButton
+                            categorySection
+                            descriptionSection
+
+                            if case .failure(let msg) = viewModel.state {
+                                Text(msg)
+                                    .font(.custom("Poppins-Regular", size: 12))
+                                    .foregroundColor(.red)
+                                    .padding(.horizontal, 24)
+                            }
+
+                            submitButton
+                        }
+                        .padding(.vertical, 16)
                     }
-                    .padding(.vertical, 16)
                 }
             }
-            .navigationTitle("Reportar a \(reportedUserName)")
+            .navigationTitle(isSuccess ? "Report submitted" : "Report user")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancelar") { dismiss() }
-                        .font(.custom("Poppins-Regular", size: 14))
-                        .foregroundColor(.primaryBrand)
+                if !isSuccess {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { dismiss() }
+                            .font(.custom("Poppins-Regular", size: 14))
+                            .foregroundColor(.primaryBrand)
+                    }
                 }
-            }
-            .onChange(of: viewModel.state) { _, newState in
-                if case .success = newState { dismiss() }
             }
         }
     }
 
     // MARK: - Subviews
 
+    private var successView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            ZStack {
+                Circle()
+                    .fill(Color.primaryBrand.opacity(0.1))
+                    .frame(width: 88, height: 88)
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 48))
+                    .foregroundColor(.primaryBrand)
+            }
+
+            VStack(spacing: 10) {
+                Text("Report submitted")
+                    .font(.custom("Poppins-Bold", size: 20))
+                    .foregroundColor(.textPrimary)
+
+                Text("Our team will review the reported situation. Thank you for helping keep the community safe.")
+                    .font(.custom("Poppins-Regular", size: 14))
+                    .foregroundColor(.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+
+            Spacer()
+
+            Button("Close") { dismiss() }
+                .font(.custom("Poppins-SemiBold", size: 15))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color.primaryBrand)
+                .foregroundColor(.white)
+                .cornerRadius(12)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 16)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private var categorySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Categoría")
+            Text("Category")
                 .font(.custom("Poppins-SemiBold", size: 15))
                 .foregroundColor(.textPrimary)
 
@@ -71,7 +120,7 @@ struct ReportUserView: View {
 
     private var descriptionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Descripción")
+            Text("Description")
                 .font(.custom("Poppins-SemiBold", size: 15))
                 .foregroundColor(.textPrimary)
 
@@ -84,7 +133,7 @@ struct ReportUserView: View {
                     )
 
                 if viewModel.description.isEmpty {
-                    Text("Describe brevemente lo ocurrido...")
+                    Text("Briefly describe what happened...")
                         .font(.custom("Poppins-Regular", size: 13))
                         .foregroundColor(.textSecondary)
                         .padding(12)
@@ -125,7 +174,7 @@ struct ReportUserView: View {
                 if viewModel.state == .loading {
                     ProgressView().tint(.white)
                 } else {
-                    Text("Enviar reporte")
+                    Text("Submit report")
                         .font(.custom("Poppins-SemiBold", size: 15))
                 }
             }

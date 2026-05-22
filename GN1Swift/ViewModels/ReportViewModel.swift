@@ -18,7 +18,7 @@ final class ReportViewModel: ObservableObject {
     func submit(reportedUserId: String, reportedUserName: String) {
         let trimmed = description.trimmingCharacters(in: .whitespaces)
         guard trimmed.count >= 10 else {
-            state = .failure("La descripción debe tener al menos 10 caracteres.")
+            state = .failure("Description must be at least 10 characters.")
             return
         }
 
@@ -37,7 +37,7 @@ final class ReportViewModel: ObservableObject {
                 state = .success
             } else {
                 savePendingReport(report)
-                state = .failure("Sin conexión. El reporte se guardó y se enviará al reconectar.")
+                state = .failure("No connection. Your report was saved and will be sent when you reconnect.")
             }
         }
     }

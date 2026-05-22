@@ -11,11 +11,11 @@ enum ReportCategory: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .behavior:   return "Comportamiento inapropiado"
-        case .harassment: return "Acoso"
-        case .fakeInfo:   return "Información falsa"
-        case .vehicle:    return "Vehículo en mal estado"
-        case .other:      return "Otro"
+        case .behavior:   return "Inappropriate behavior"
+        case .harassment: return "Harassment"
+        case .fakeInfo:   return "False information"
+        case .vehicle:    return "Poor vehicle condition"
+        case .other:      return "Other"
         }
     }
 
@@ -35,4 +35,9 @@ struct IncidentReport {
     let reportedUserName: String
     let category: ReportCategory
     let description: String
+}
+
+enum ReportSource {
+    case leaderboard
+    case rideDetail
 }

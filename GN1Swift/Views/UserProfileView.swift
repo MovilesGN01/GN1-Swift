@@ -35,7 +35,8 @@ struct UserProfileView: View {
         .sheet(isPresented: $showingReport) {
             ReportUserView(
                 reportedUserId: player.userId,
-                reportedUserName: player.displayName
+                reportedUserName: player.displayName,
+                source: .leaderboard
             )
         }
     }
