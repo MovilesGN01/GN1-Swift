@@ -49,7 +49,7 @@ struct RideFilterSheet: View {
     private var zoneSection: some View {
         filterBlock("Zone") {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
+                LazyHStack(spacing: 10) {
                     ForEach(zones, id: \.self) { zone in
                         let active = selectedZone == zone
                         Button { selectedZone = zone } label: {

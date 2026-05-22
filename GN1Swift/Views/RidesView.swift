@@ -248,7 +248,33 @@ struct RidesView: View {
             }
             ForEach(passengerVM.filteredRides) { ride in
                 NavigationLink(destination: RideDetailView(ride: ride)) {
-                    rideCard(ride: ride)
+                    RideCard(
+                        ride: ride,
+                        highlighted: false,
+                        alreadyRequested: myRequestsVM.hasRequested(rideId: ride.id)
+                            || passengerVM.requestedRideIds.contains(ride.id),
+                        isCompleted: passengerVM.completedRideIds.contains(ride.id),
+                        isReserving: reservingRideId == ride.id,
+                        isOffline: passengerVM.isOffline,
+                        onReserve: {
+                            guard reservingRideId == nil else { return }
+                            reservingRideId = ride.id
+                            facade.requestRide(rideId: ride.id) { result in
+                                DispatchQueue.main.async {
+                                    reservingRideId = nil
+                                    switch result {
+                                    case .success:
+                                        reservedDriverName = ride.driverName
+                                        showReserveAlert = true
+                                    case .alreadyRequested:
+                                        showDuplicateAlert = true
+                                    case .failure:
+                                        break
+                                    }
+                                }
+                            }
+                        }
+                    )
                 }
                 .buttonStyle(PlainButtonStyle())
             }
@@ -263,7 +289,33 @@ struct RidesView: View {
             VStack(spacing: 8) {
                 ForEach(passengerVM.recommendedRides) { ride in
                     NavigationLink(destination: RideDetailView(ride: ride)) {
-                        rideCard(ride: ride, highlighted: true)
+                        RideCard(
+                            ride: ride,
+                            highlighted: true,
+                            alreadyRequested: myRequestsVM.hasRequested(rideId: ride.id)
+                                || passengerVM.requestedRideIds.contains(ride.id),
+                            isCompleted: passengerVM.completedRideIds.contains(ride.id),
+                            isReserving: reservingRideId == ride.id,
+                            isOffline: passengerVM.isOffline,
+                            onReserve: {
+                                guard reservingRideId == nil else { return }
+                                reservingRideId = ride.id
+                                facade.requestRide(rideId: ride.id) { result in
+                                    DispatchQueue.main.async {
+                                        reservingRideId = nil
+                                        switch result {
+                                        case .success:
+                                            reservedDriverName = ride.driverName
+                                            showReserveAlert = true
+                                        case .alreadyRequested:
+                                            showDuplicateAlert = true
+                                        case .failure:
+                                            break
+                                        }
+                                    }
+                                }
+                            }
+                        )
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
@@ -386,9 +438,44 @@ struct RidesView: View {
         .cornerRadius(20)
     }
 
-    // MARK: - Ride Card (Passenger marketplace)
+    // MARK: - Helpers
 
-    private func rideCard(ride: Ride, highlighted: Bool = false) -> some View {
+    private func sectionLabel(_ text: String, color: Color) -> some View {
+        Text(text)
+            .font(.custom("Poppins-SemiBold", size: 11))
+            .tracking(0.8)
+            .foregroundColor(color)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 6)
+    }
+
+    /// Start only the listeners relevant to the signed-in user's role.
+    private func loadForRole() {
+        if role != "driver" {           // passenger or both
+            passengerVM.loadFullRideState()
+            myRequestsVM.startListening()
+        }
+        if role != "passenger" {        // driver or both
+            driverVM.startListening()
+        }
+    }
+}
+
+// MARK: - RideCard
+
+private struct RideCard: View {
+    let ride: Ride
+    let highlighted: Bool
+    let alreadyRequested: Bool
+    let isCompleted: Bool
+    let isReserving: Bool
+    let isOffline: Bool
+    let onReserve: () -> Void
+
+    private var isBlocked: Bool { alreadyRequested || isCompleted || isOffline }
+
+    var body: some View {
         VStack(spacing: 12) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -426,33 +513,9 @@ struct RidesView: View {
                 }
             }
 
-            // Quick-reserve button (alternative to opening RideDetailView)
-            // Check both the real-time listener AND the startup snapshot to ensure
-            // the button shows the correct disabled state immediately on launch.
-            let alreadyRequested = myRequestsVM.hasRequested(rideId: ride.id)
-                || passengerVM.requestedRideIds.contains(ride.id)
-            let isCompleted = passengerVM.completedRideIds.contains(ride.id)
-            let isReserving = reservingRideId == ride.id
-            let isOffline = passengerVM.isOffline
-            let isBlocked = alreadyRequested || isCompleted || isOffline
-
             Button {
                 guard !isReserving, !isBlocked else { return }
-                reservingRideId = ride.id
-                facade.requestRide(rideId: ride.id) { result in
-                    DispatchQueue.main.async {
-                        reservingRideId = nil
-                        switch result {
-                        case .success:
-                            reservedDriverName = ride.driverName
-                            showReserveAlert = true
-                        case .alreadyRequested:
-                            showDuplicateAlert = true
-                        case .failure:
-                            break
-                        }
-                    }
-                }
+                onReserve()
             } label: {
                 ZStack {
                     if isReserving {
@@ -495,28 +558,5 @@ struct RidesView: View {
                 .stroke(highlighted ? Color.primaryBrand.opacity(0.2) : Color.borderLine, lineWidth: 1)
         )
         .cornerRadius(16)
-    }
-
-    // MARK: - Helpers
-
-    private func sectionLabel(_ text: String, color: Color) -> some View {
-        Text(text)
-            .font(.custom("Poppins-SemiBold", size: 11))
-            .tracking(0.8)
-            .foregroundColor(color)
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 6)
-    }
-
-    /// Start only the listeners relevant to the signed-in user's role.
-    private func loadForRole() {
-        if role != "driver" {           // passenger or both
-            passengerVM.loadFullRideState()
-            myRequestsVM.startListening()
-        }
-        if role != "passenger" {        // driver or both
-            driverVM.startListening()
-        }
     }
 }
