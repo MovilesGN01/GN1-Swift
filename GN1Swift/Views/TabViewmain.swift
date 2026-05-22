@@ -33,19 +33,12 @@ struct TabViewmain: View {
                     }
                     .tag(2)
 
-                AnalyticsDashboardView()
-                    .tabItem {
-                        Image(systemName: "chart.bar.fill")
-                        Text("Analytics")
-                    }
-                    .tag(3)
-
                 ProfileView(isLoggedIn: $isLoggedIn)
                     .tabItem {
                         Image(systemName: "person.fill")
                         Text("Profile")
                     }
-                    .tag(4)
+                    .tag(3)
             }
             .tint(.primaryBrand)
 
