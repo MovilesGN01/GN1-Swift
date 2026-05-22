@@ -219,13 +219,9 @@ struct RidesView: View {
 
     @ViewBuilder
     private var passengerContent: some View {
-        // --- Filter card ---
-        filterCard
-            .padding(.horizontal, 16)
+        // --- Filters ---
+        filtersSection
             .padding(.top, 8)
-
-        ratingChipsRow
-            .padding(.top, 12)
 
         // --- Available Rides ---
         sectionLabel("ALL AVAILABLE RIDES", color: .placeholderMuted)
@@ -309,89 +305,72 @@ struct RidesView: View {
         DriverRequestsSectionView(viewModel: driverVM)
     }
 
-    // MARK: - Filter Card (Passenger)
+    // MARK: - Filters Section
 
-    private var filterCard: some View {
-        VStack(spacing: 12) {
-            Menu {
+    private var filtersSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            filterRow(label: "Zone") {
                 ForEach(passengerVM.zones, id: \.self) { zone in
-                    Button(zone) { passengerVM.selectedZone = zone }
-                }
-            } label: {
-                HStack {
-                    Text("Zone:")
-                        .font(.custom("Poppins-Regular", size: 13))
-                        .foregroundColor(.placeholderMuted)
-                    Text(passengerVM.selectedZone)
-                        .font(.custom("Poppins-SemiBold", size: 13))
-                        .foregroundColor(.textPrimary)
-                    Spacer()
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 12))
-                        .foregroundColor(.placeholderMuted)
-                }
-                .padding()
-                .background(Color.surfaceCard)
-                .cornerRadius(10)
-            }
-
-            HStack(spacing: 12) {
-                HStack(spacing: 6) {
-                    Image(systemName: "person.2")
-                        .foregroundColor(.placeholderMuted)
-                        .font(.system(size: 13))
-                    Text("Min seats:")
-                        .font(.custom("Poppins-Regular", size: 12))
-                        .foregroundColor(.placeholderMuted)
-                    Text("\(passengerVM.minSeats)")
-                        .font(.custom("Poppins-SemiBold", size: 13))
-                        .foregroundColor(.textPrimary)
-                        .frame(minWidth: 16)
-                    Stepper("", value: $passengerVM.minSeats, in: 1...8)
-                        .labelsHidden()
-                }
-                Spacer()
-                Button { passengerVM.applyFilters() } label: {
-                    Text("Search")
-                        .font(.custom("Poppins-SemiBold", size: 13))
-                        .foregroundColor(.white)
-                        .frame(width: 80, height: 36)
-                        .background(Color.primaryBrand)
-                        .cornerRadius(8)
-                }
-            }
-        }
-        .padding(16)
-        .background(Color.surfaceCard)
-        .cornerRadius(12)
-    }
-
-    // MARK: - Rating Chips
-
-    private var ratingChipsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(ratingFilters, id: \.label) { filter in
-                    let isActive = passengerVM.minRating == filter.value
-                    Button { passengerVM.minRating = filter.value } label: {
-                        Text(filter.label)
-                            .font(.custom("Poppins-SemiBold", size: 13))
-                            .foregroundColor(isActive ? .white : .textPrimary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(isActive ? Color.primaryBrand : Color.backgroundApp)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(isActive ? Color.primaryBrand : Color.borderLine, lineWidth: 1)
-                            )
-                            .cornerRadius(20)
+                    let isActive = passengerVM.selectedZone == zone
+                    filterChip(title: zone, isActive: isActive) {
+                        passengerVM.selectedZone = zone
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 4)
+            filterRow(label: "Seats") {
+                ForEach([1, 2, 3, 4], id: \.self) { n in
+                    let isActive = passengerVM.minSeats == n
+                    filterChip(title: "\(n)+", isActive: isActive) {
+                        passengerVM.minSeats = n
+                    }
+                }
+            }
+            filterRow(label: "Rating") {
+                ForEach(ratingFilters, id: \.label) { filter in
+                    let isActive = passengerVM.minRating == filter.value
+                    filterChip(title: filter.label, isActive: isActive) {
+                        passengerVM.minRating = filter.value
+                    }
+                }
+            }
         }
-        .frame(height: 44)
+        .padding(.top, 4)
+    }
+
+    private func filterRow<Content: View>(label: String,
+                                          @ViewBuilder chips: () -> Content) -> some View {
+        HStack(spacing: 0) {
+            Text(label)
+                .font(.custom("Poppins-SemiBold", size: 11))
+                .foregroundColor(.placeholderMuted)
+                .frame(width: 46, alignment: .leading)
+                .padding(.leading, 16)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    chips()
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+            }
+        }
+        .frame(height: 36)
+    }
+
+    private func filterChip(title: String, isActive: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.custom("Poppins-SemiBold", size: 12))
+                .foregroundColor(isActive ? .white : .textPrimary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(isActive ? Color.primaryBrand : Color.surfaceCard)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(isActive ? Color.primaryBrand : Color.borderLine, lineWidth: 1)
+                )
+                .cornerRadius(20)
+        }
     }
 
     // MARK: - Ride Card (Passenger marketplace)
