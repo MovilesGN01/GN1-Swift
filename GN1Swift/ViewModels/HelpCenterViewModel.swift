@@ -20,6 +20,7 @@ final class HelpCenterViewModel: ObservableObject {
     private let db            = Firestore.firestore()
     private let ticketService = SupportTicketService.shared
     private let faqCache      = FAQCacheService.shared
+    private let analytics     = AnalyticsService.shared
     private let monitor       = NWPathMonitor()
     private var wasOffline    = false
 
@@ -62,9 +63,15 @@ final class HelpCenterViewModel: ObservableObject {
         guard let userId = UserSession.shared.userId else { return }
         isLoading = true
 
+        let isOnline = !wasOffline
+        analytics.helpOpened(online: isOnline)
+
         // Show cached FAQ immediately if TTL still valid
         if let cached = faqCache.faqItems() {
             faqItems = cached
+            analytics.faqLoadedFromCache(cacheHit: true)
+        } else {
+            analytics.faqLoadedFromCache(cacheHit: false)
         }
         pendingTickets = ticketService.loadPendingTickets()
 
@@ -146,6 +153,7 @@ final class HelpCenterViewModel: ObservableObject {
         ticketDescription = ""
         showTicketSuccess = true
 
+        analytics.ticketCreated(createdOffline: isOffline, online: !isOffline)
         if !isOffline { ticketService.syncPendingTickets() }
         recordTicketCreation()
     }

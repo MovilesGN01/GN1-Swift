@@ -22,6 +22,7 @@ final class WalletViewModel: ObservableObject {
     private let db            = Firestore.firestore()
     private let cache         = WalletCacheService.shared
     private let localStorage  = WalletLocalStorageService.shared
+    private let analytics     = AnalyticsService.shared
     private let monitor       = NWPathMonitor()
     private var wasOffline    = false
 
@@ -65,6 +66,9 @@ final class WalletViewModel: ObservableObject {
         guard let userId = UserSession.shared.userId else { return }
         isLoading = true
 
+        let isOnline = !wasOffline
+        analytics.walletOpened(userId: userId, online: isOnline)
+
         let cacheStart = Date()
 
         // Layer 1: NSCache hit → show immediately, refresh in background
@@ -82,6 +86,8 @@ final class WalletViewModel: ObservableObject {
             transactions = Array(txns.prefix(10))
             dataSource   = "NSCache (in-memory)"
             isLoading    = false
+            analytics.walletLoadedFromCache(cacheHit: true, loadTime: cacheLoadTime)
+            analytics.walletTransactionViewed(online: isOnline)
             Task { [weak self] in await self?.refreshFromFirebase(userId: userId) }
             return
         }
@@ -93,6 +99,11 @@ final class WalletViewModel: ObservableObject {
             transactions  = Array(snapshot.transactions.prefix(10))
             dataSource    = "Local Snapshot (JSON)"
             isLoading     = false
+            analytics.walletOfflineSnapshotLoaded(snapshotExists: true)
+            analytics.walletLoadedFromCache(cacheHit: true, loadTime: cacheLoadTime)
+            analytics.walletTransactionViewed(online: isOnline)
+        } else {
+            analytics.walletOfflineSnapshotLoaded(snapshotExists: false)
         }
 
         // Always fire Firebase refresh
@@ -142,6 +153,8 @@ final class WalletViewModel: ObservableObject {
                 self.networkLoadTime = networkMs
                 self.dataSource      = "Firebase Firestore"
                 self.recordUsage(offline: false)
+                self.analytics.walletLoadedFromCache(cacheHit: false, loadTime: networkMs)
+                self.analytics.walletTransactionViewed(online: true)
             }
 
         } catch {

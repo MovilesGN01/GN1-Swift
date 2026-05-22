@@ -55,6 +55,7 @@ final class SupportTicketService {
         var syncedIds: [String] = []
 
         for ticket in pending {
+            let syncStart = Date()
             db.collection("support_tickets")
                 .document(userId)
                 .collection("tickets")
@@ -65,7 +66,10 @@ final class SupportTicketService {
                     "status":      "open",
                     "createdAt":   ticket.createdAt
                 ]) { [weak self] err in
-                    guard err == nil else { return }
+                    let syncTime = Date().timeIntervalSince(syncStart) * 1000
+                    let success  = err == nil
+                    AnalyticsService.shared.pendingTicketSynced(syncSuccess: success, syncTime: syncTime)
+                    guard success else { return }
                     syncedIds.append(ticket.id)
                     self?.removeSyncedTickets(syncedIds)
                 }
