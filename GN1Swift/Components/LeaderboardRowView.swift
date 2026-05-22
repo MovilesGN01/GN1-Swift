@@ -50,7 +50,7 @@ struct LeaderboardRowView: View {
         .cornerRadius(12)
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(isCurrentUser ? Color.primaryBrand : Color.clear, lineWidth: 1)
+                .stroke(Color.primaryBrand, lineWidth: isCurrentUser ? 1 : 0)
         )
     }
 }

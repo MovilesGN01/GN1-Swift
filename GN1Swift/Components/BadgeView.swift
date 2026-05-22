@@ -39,7 +39,8 @@ struct BadgeView: View {
                     }
                 }
             }
-            
+            .drawingGroup()
+
             Text(badge.name)
                 .font(.custom("Poppins-SemiBold", size: 12))
                 .foregroundColor(.textPrimary)

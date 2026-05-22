@@ -148,17 +148,19 @@ struct CommunityView: View {
                     .frame(maxWidth: .infinity)
                     .padding(24)
                 } else {
-                    ForEach(Array(viewModel.topPlayers.enumerated()), id: \.element.userId) { index, player in
-                        let isCurrentUser = Auth.auth().currentUser?.uid == player.userId
-                        LeaderboardRowView(
-                            rank: index + 1,
-                            player: player,
-                            isCurrentUser: isCurrentUser
-                        )
+                    LazyVStack(spacing: 16) {
+                        ForEach(Array(viewModel.topPlayers.enumerated()), id: \.element.userId) { index, player in
+                            let isCurrentUser = Auth.auth().currentUser?.uid == player.userId
+                            LeaderboardRowView(
+                                rank: index + 1,
+                                player: player,
+                                isCurrentUser: isCurrentUser
+                            )
+                        }
+                        .padding(.horizontal, 24)
                     }
-                    .padding(.horizontal, 24)
                 }
-                
+
                 Spacer()
                     .frame(height: 20)
             }
