@@ -20,6 +20,7 @@ struct RidesView: View {
     @State private var showCreateRide = false
     @State private var showRecommendations = false
     @State private var showSearch = false
+    @State private var showFilters = false
     @State private var rideInProgress: Ride?
     @State private var navigateToRideInProgress = false
     @State private var selectedRide: Ride?
@@ -112,6 +113,15 @@ struct RidesView: View {
             // Sheets
             .fullScreenCover(isPresented: $showSearch) {
                 SearchRidesView(rides: passengerVM.allRides)
+            }
+            .sheet(isPresented: $showFilters) {
+                RideFilterSheet(
+                    zones: passengerVM.zones,
+                    selectedZone: $passengerVM.selectedZone,
+                    minSeats: $passengerVM.minSeats,
+                    minRating: $passengerVM.minRating
+                )
+                .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showCreateRide) { CreateRideView() }
             .onChange(of: showCreateRide) { _, isShowing in
@@ -219,8 +229,8 @@ struct RidesView: View {
 
     @ViewBuilder
     private var passengerContent: some View {
-        // --- Filters ---
-        filtersSection
+        // --- Filter bar ---
+        filterBar
             .padding(.top, 8)
 
         // --- Available Rides ---
@@ -305,72 +315,75 @@ struct RidesView: View {
         DriverRequestsSectionView(viewModel: driverVM)
     }
 
-    // MARK: - Filters Section
+    // MARK: - Filter Bar
 
-    private var filtersSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            filterRow(label: "Zone") {
-                ForEach(passengerVM.zones, id: \.self) { zone in
-                    let isActive = passengerVM.selectedZone == zone
-                    filterChip(title: zone, isActive: isActive) {
-                        passengerVM.selectedZone = zone
-                    }
-                }
-            }
-            filterRow(label: "Seats") {
-                ForEach([1, 2, 3, 4], id: \.self) { n in
-                    let isActive = passengerVM.minSeats == n
-                    filterChip(title: "\(n)+", isActive: isActive) {
-                        passengerVM.minSeats = n
-                    }
-                }
-            }
-            filterRow(label: "Rating") {
-                ForEach(ratingFilters, id: \.label) { filter in
-                    let isActive = passengerVM.minRating == filter.value
-                    filterChip(title: filter.label, isActive: isActive) {
-                        passengerVM.minRating = filter.value
-                    }
-                }
-            }
-        }
-        .padding(.top, 4)
+    private var hasActiveFilters: Bool {
+        passengerVM.selectedZone != "All" || passengerVM.minSeats > 1 || passengerVM.minRating > 0
     }
 
-    private func filterRow<Content: View>(label: String,
-                                          @ViewBuilder chips: () -> Content) -> some View {
+    private var filterBar: some View {
         HStack(spacing: 0) {
-            Text(label)
-                .font(.custom("Poppins-SemiBold", size: 11))
-                .foregroundColor(.placeholderMuted)
-                .frame(width: 46, alignment: .leading)
-                .padding(.leading, 16)
-
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    chips()
+                    if !hasActiveFilters {
+                        Text("All rides")
+                            .font(.custom("Poppins-Regular", size: 13))
+                            .foregroundColor(.placeholderMuted)
+                    } else {
+                        if passengerVM.selectedZone != "All" {
+                            activeChip(passengerVM.selectedZone) {
+                                passengerVM.selectedZone = "All"
+                            }
+                        }
+                        if passengerVM.minSeats > 1 {
+                            activeChip("\(passengerVM.minSeats)+ seats") {
+                                passengerVM.minSeats = 1
+                            }
+                        }
+                        if passengerVM.minRating > 0 {
+                            activeChip(String(format: "%.1f★", passengerVM.minRating)) {
+                                passengerVM.minRating = 0
+                            }
+                        }
+                    }
                 }
-                .padding(.horizontal, 8)
+                .padding(.leading, 16)
                 .padding(.vertical, 4)
             }
+
+            Button { showFilters = true } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(hasActiveFilters ? .white : .primaryBrand)
+                    .frame(width: 38, height: 38)
+                    .background(hasActiveFilters ? Color.primaryBrand : Color.surfaceCard)
+                    .overlay(RoundedRectangle(cornerRadius: 10)
+                        .stroke(hasActiveFilters ? Color.clear : Color.borderLine, lineWidth: 1))
+                    .cornerRadius(10)
+            }
+            .padding(.trailing, 16)
+            .padding(.leading, 8)
         }
-        .frame(height: 36)
+        .frame(height: 50)
     }
 
-    private func filterChip(title: String, isActive: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
+    private func activeChip(_ text: String, onRemove: @escaping () -> Void) -> some View {
+        HStack(spacing: 5) {
+            Text(text)
                 .font(.custom("Poppins-SemiBold", size: 12))
-                .foregroundColor(isActive ? .white : .textPrimary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(isActive ? Color.primaryBrand : Color.surfaceCard)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(isActive ? Color.primaryBrand : Color.borderLine, lineWidth: 1)
-                )
-                .cornerRadius(20)
+                .foregroundColor(.primaryBrand)
+            Button(action: onRemove) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.primaryBrand)
+            }
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.primaryBrand.opacity(0.1))
+        .overlay(RoundedRectangle(cornerRadius: 20)
+            .stroke(Color.primaryBrand.opacity(0.35), lineWidth: 1))
+        .cornerRadius(20)
     }
 
     // MARK: - Ride Card (Passenger marketplace)
