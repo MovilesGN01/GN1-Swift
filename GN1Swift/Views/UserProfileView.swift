@@ -101,7 +101,7 @@ struct UserProfileView: View {
             HStack(spacing: 8) {
                 Image(systemName: "flag.fill")
                     .font(.system(size: 14))
-                Text("Reportar usuario")
+                Text("Report an user")
                     .font(.custom("Poppins-SemiBold", size: 14))
             }
             .foregroundColor(.red)

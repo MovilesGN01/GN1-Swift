@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct BadgeView: View {
+struct BadgeView: View, Equatable {
     let badge: Badge
     let size: CGFloat = 80
     
@@ -39,7 +39,8 @@ struct BadgeView: View {
                     }
                 }
             }
-            
+            .drawingGroup()
+
             Text(badge.name)
                 .font(.custom("Poppins-SemiBold", size: 12))
                 .foregroundColor(.textPrimary)
