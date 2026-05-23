@@ -39,7 +39,7 @@ struct CommunityView: View {
                     .padding(.horizontal, 24)
                     .padding(.bottom, 16)
                     
-                    if viewModel.isLoading {
+                    if viewModel.isLoading && viewModel.gamification == nil && viewModel.topPlayers.isEmpty {
                         Spacer()
                         ProgressView()
                         Spacer()
@@ -101,6 +101,7 @@ struct CommunityView: View {
                             LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 12) {
                                 ForEach(gamification.badges) { badge in
                                     BadgeView(badge: badge)
+                                        .equatable()
                                 }
                             }
                             .padding(.horizontal, 4)
@@ -148,17 +149,20 @@ struct CommunityView: View {
                     .frame(maxWidth: .infinity)
                     .padding(24)
                 } else {
-                    ForEach(Array(viewModel.topPlayers.enumerated()), id: \.element.userId) { index, player in
-                        let isCurrentUser = Auth.auth().currentUser?.uid == player.userId
-                        LeaderboardRowView(
-                            rank: index + 1,
-                            player: player,
-                            isCurrentUser: isCurrentUser
-                        )
+                    LazyVStack(spacing: 16) {
+                        ForEach(Array(viewModel.topPlayers.enumerated()), id: \.element.userId) { index, player in
+                            let isCurrentUser = Auth.auth().currentUser?.uid == player.userId
+                            LeaderboardRowView(
+                                rank: index + 1,
+                                player: player,
+                                isCurrentUser: isCurrentUser
+                            )
+                            .equatable()
+                        }
+                        .padding(.horizontal, 24)
                     }
-                    .padding(.horizontal, 24)
                 }
-                
+
                 Spacer()
                     .frame(height: 20)
             }
