@@ -5,6 +5,7 @@ struct CreateRideView: View {
     @StateObject private var viewModel: CreateRideViewModel
     @StateObject private var originSearch = LocationSearchService()
     @StateObject private var destinationSearch = LocationSearchService()
+    @StateObject private var favoritesVM = FavoritesViewModel()
     @Environment(\.dismiss) private var dismiss
     @State private var navigateToRequests = false
     private enum Field { case origin, destination }
@@ -19,10 +20,12 @@ struct CreateRideView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     header
+                    favoritesSection
                     formFields
                 }
                 .padding(.vertical, 24)
             }
+            .onAppear { favoritesVM.load() }
             .background(Color.backgroundApp)
             .navigationBarHidden(true)
             .alert("Error", isPresented: Binding(
@@ -156,6 +159,21 @@ struct CreateRideView: View {
             }
             .inputStyle()
 
+            // Save as Favorite
+            Button {
+                favoritesVM.save(origin: viewModel.originText,
+                                 destination: viewModel.destinationText,
+                                 zone: viewModel.zone)
+            } label: {
+                Label("Save as Favorite", systemImage: "star")
+                    .font(.custom("Poppins-Medium", size: 13))
+                    .foregroundColor(viewModel.originText.isEmpty || viewModel.destinationText.isEmpty
+                                     ? .placeholderMuted : .primaryBrand)
+            }
+            .disabled(viewModel.originText.isEmpty || viewModel.destinationText.isEmpty)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.top, -4)
+
             // Departure time
             VStack(alignment: .leading, spacing: 6) {
                 Text("Departure Time")
@@ -247,6 +265,61 @@ struct CreateRideView: View {
             .padding(.top, 8)
         }
         .padding(.horizontal, 24)
+    }
+
+    // MARK: - Saved Favorites
+
+    @ViewBuilder
+    private var favoritesSection: some View {
+        if !favoritesVM.favorites.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Saved Routes")
+                    .font(.custom("Poppins-SemiBold", size: 13))
+                    .foregroundColor(.textSecondary)
+                    .padding(.horizontal, 24)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(favoritesVM.favorites) { fav in
+                            favoriteChip(fav)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                }
+            }
+            .padding(.bottom, 16)
+        }
+    }
+
+    private func favoriteChip(_ fav: FavoriteRoute) -> some View {
+        HStack(spacing: 6) {
+            Button {
+                favoritesVM.apply(fav, to: viewModel)
+            } label: {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(fav.origin)
+                        .font(.custom("Poppins-SemiBold", size: 11))
+                        .foregroundColor(.textPrimary)
+                        .lineLimit(1)
+                    Text("→ \(fav.destination)")
+                        .font(.custom("Poppins-Regular", size: 10))
+                        .foregroundColor(.textSecondary)
+                        .lineLimit(1)
+                }
+            }
+            Button {
+                favoritesVM.delete(id: fav.id)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundColor(.textSecondary)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color.surfaceCard)
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primaryBrand.opacity(0.3), lineWidth: 1))
+        .cornerRadius(10)
     }
 
     // MARK: - Suggestions List

@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var weatherCondition = ""
     @State private var commuteForecastText = ""
     @State private var didLoadWeather = false
+    @State private var showAnalytics = false
 
     var body: some View {
         NavigationStack {
@@ -46,6 +47,9 @@ struct HomeView: View {
 
                     statsStrip
 
+                    // ── Demand Analytics ───────────────────────────────────────
+                    demandAnalyticsCard
+
                     // ── Recent Rides ───────────────────────────────────────────
                     HStack {
                         Text("Recent Rides")
@@ -68,6 +72,7 @@ struct HomeView: View {
             .background(Color.backgroundApp)
             } // VStack
         }
+        .sheet(isPresented: $showAnalytics) { AnalyticsDashboardView() }
         .animation(.easeInOut(duration: 0.25), value: vm.isOffline)
         .task {
             vm.load()
@@ -294,6 +299,41 @@ struct HomeView: View {
         .background(Color.surfaceCard)
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.borderLine, lineWidth: 1))
         .cornerRadius(16)
+    }
+
+    // MARK: - Demand Analytics Card
+
+    private var demandAnalyticsCard: some View {
+        Button { showAnalytics = true } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "chart.bar.fill")
+                    .font(.system(size: 22))
+                    .foregroundColor(.primaryBrand)
+                    .frame(width: 44, height: 44)
+                    .background(Color.primaryBrand.opacity(0.1))
+                    .cornerRadius(10)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Demand Analytics")
+                        .font(.custom("Poppins-SemiBold", size: 15))
+                        .foregroundColor(.textPrimary)
+                    Text("Top zones & peak hours")
+                        .font(.custom("Poppins-Regular", size: 12))
+                        .foregroundColor(.textSecondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.placeholderMuted)
+            }
+            .padding(16)
+            .background(Color.surfaceCard)
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color.borderLine, lineWidth: 1))
+            .cornerRadius(16)
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 
     // MARK: - Weather (unchanged)
