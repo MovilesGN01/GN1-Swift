@@ -66,6 +66,16 @@ final class CloudFunctionsService {
         functions.httpsCallable("weatherAwareRides").call { _, _ in completion() }
     }
 
+    // MARK: - Analytics
+
+    func calculateTopZones(completion: @escaping () -> Void = {}) {
+        functions.httpsCallable("calculateTopZones").call { _, _ in completion() }
+    }
+
+    func calculatePeakHours(completion: @escaping () -> Void = {}) {
+        functions.httpsCallable("calculatePeakHours").call { _, _ in completion() }
+    }
+
     // MARK: - Rides — Passenger
 
     func getAllAvailableRides(completion: @escaping ([Ride]) -> Void) {
@@ -246,6 +256,21 @@ final class CloudFunctionsService {
         }
     }
     
+    // MARK: - Reports
+
+    func reportUser(report: IncidentReport, completion: @escaping (Bool) -> Void) {
+        let payload: [String: Any] = [
+            "reportedUserId": report.reportedUserId,
+            "reportedUserName": report.reportedUserName,
+            "category": report.category.rawValue,
+            "description": report.description
+        ]
+        functions.httpsCallable("reportUser").call(payload) { _, error in
+            if let error = error { print("reportUser error:", error.localizedDescription) }
+            completion(error == nil)
+        }
+    }
+
     // MARK: - Gamification
     
     func fetchGamificationProfile(userId: String, completion: @escaping (UserGamification?) -> Void) {
