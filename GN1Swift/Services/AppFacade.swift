@@ -254,6 +254,10 @@ final class AppFacade: AppFacadeType {
         }
     }  
   
+    func reportUser(report: IncidentReport, completion: @escaping (Bool) -> Void) {
+        cloudFunctionsService.reportUser(report: report, completion: completion)
+    }
+
     func fetchGamificationProfile(userId: String, completion: @escaping (UserGamification?) -> Void) {
         cloudFunctionsService.fetchGamificationProfile(userId: userId, completion: completion)
     }

@@ -152,12 +152,15 @@ struct CommunityView: View {
                     LazyVStack(spacing: 16) {
                         ForEach(Array(viewModel.topPlayers.enumerated()), id: \.element.userId) { index, player in
                             let isCurrentUser = Auth.auth().currentUser?.uid == player.userId
-                            LeaderboardRowView(
-                                rank: index + 1,
-                                player: player,
-                                isCurrentUser: isCurrentUser
-                            )
-                            .equatable()
+                            NavigationLink(destination: UserProfileView(player: player)) {
+                                LeaderboardRowView(
+                                    rank: index + 1,
+                                    player: player,
+                                    isCurrentUser: isCurrentUser
+                                )
+                                .equatable()
+                            }
+                            .buttonStyle(.plain)
                         }
                         .padding(.horizontal, 24)
                     }
