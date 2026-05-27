@@ -4,7 +4,7 @@ import SwiftUI
 
 struct HelpCenterView: View {
     @StateObject private var viewModel = HelpCenterViewModel()
-    @State private var appeared = false
+    @State private var appeared      = false
     @State private var expandedFAQId: String? = nil
 
     var body: some View {
@@ -62,8 +62,8 @@ struct HelpCenterView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(viewModel.isOffline
-                 ? "Your ticket was saved locally and will sync when you reconnect."
-                 : "Your support ticket has been submitted successfully.")
+                 ? "Saved locally — will sync automatically when you reconnect."
+                 : "Support ticket submitted successfully.")
         }
         .onAppear {
             viewModel.loadHelpCenter()
@@ -80,7 +80,6 @@ private struct HelpFAQCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-
             HStack(spacing: 10) {
                 helpIconBubble("questionmark.circle.fill", tint: .primaryBrand)
                 VStack(alignment: .leading, spacing: 2) {
@@ -90,6 +89,16 @@ private struct HelpFAQCard: View {
                     Text("\(viewModel.faqItems.count) topics")
                         .font(.custom("Poppins-Regular", size: 11))
                         .foregroundColor(.textSecondary)
+                }
+                Spacer()
+                // TTL cache indicator
+                if !viewModel.cacheExpiresIn.isEmpty {
+                    Text(viewModel.cacheExpiresIn)
+                        .font(.custom("Poppins-Regular", size: 9))
+                        .foregroundColor(.primaryBrand)
+                        .padding(.horizontal, 7).padding(.vertical, 3)
+                        .background(Color.primaryBrand.opacity(0.08))
+                        .cornerRadius(6)
                 }
             }
 
@@ -106,9 +115,7 @@ private struct HelpFAQCard: View {
                             expandedId = expandedId == item.id ? nil : item.id
                         }
                     }
-                    if item.id != viewModel.faqItems.last?.id {
-                        Divider()
-                    }
+                    if item.id != viewModel.faqItems.last?.id { Divider() }
                 }
             }
         }
@@ -151,8 +158,7 @@ private struct FAQRow: View {
                 Text(item.category.uppercased())
                     .font(.custom("Poppins-Regular", size: 10))
                     .foregroundColor(.primaryBrand)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Color.primaryBrand.opacity(0.08))
                     .cornerRadius(6)
             }
@@ -167,7 +173,6 @@ private struct HelpCreateTicketCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-
             HStack(spacing: 10) {
                 helpIconBubble("envelope.badge.fill", tint: .primaryBrand)
                 VStack(alignment: .leading, spacing: 2) {
@@ -175,7 +180,7 @@ private struct HelpCreateTicketCard: View {
                         .font(.custom("Poppins-SemiBold", size: 15))
                         .foregroundColor(.textPrimary)
                     Text(viewModel.isOffline
-                         ? "Offline — will sync when reconnected"
+                         ? "Offline — queued, syncs automatically"
                          : "We typically respond within 24 hours")
                         .font(.custom("Poppins-Regular", size: 11))
                         .foregroundColor(viewModel.isOffline ? .orange : .textSecondary)
@@ -184,17 +189,14 @@ private struct HelpCreateTicketCard: View {
 
             TextField("Title", text: $viewModel.ticketTitle)
                 .font(.custom("Poppins-Regular", size: 14))
-                .padding(12)
-                .background(Color(.systemGray6))
-                .cornerRadius(10)
+                .padding(12).background(Color(.systemGray6)).cornerRadius(10)
 
             ZStack(alignment: .topLeading) {
                 if viewModel.ticketDescription.isEmpty {
                     Text("Describe your issue…")
                         .font(.custom("Poppins-Regular", size: 14))
                         .foregroundColor(.placeholderMuted)
-                        .padding(.horizontal, 14)
-                        .padding(.top, 14)
+                        .padding(.horizontal, 14).padding(.top, 14)
                 }
                 TextEditor(text: $viewModel.ticketDescription)
                     .font(.custom("Poppins-Regular", size: 14))
@@ -208,16 +210,14 @@ private struct HelpCreateTicketCard: View {
             Button(action: viewModel.submitTicket) {
                 HStack(spacing: 8) {
                     Image(systemName: viewModel.isOffline ? "square.and.arrow.down" : "paperplane.fill")
-                    Text(viewModel.isOffline ? "Save Offline" : "Submit Ticket")
+                    Text(viewModel.isOffline ? "Save to Queue" : "Submit Ticket")
                         .font(.custom("Poppins-SemiBold", size: 15))
                 }
                 .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 48)
+                .frame(maxWidth: .infinity).frame(height: 48)
                 .background(
                     viewModel.ticketTitle.trimmingCharacters(in: .whitespaces).isEmpty
-                    ? Color.primaryBrand.opacity(0.4)
-                    : Color.primaryBrand
+                    ? Color.primaryBrand.opacity(0.4) : Color.primaryBrand
                 )
                 .cornerRadius(14)
             }
@@ -230,7 +230,7 @@ private struct HelpCreateTicketCard: View {
     }
 }
 
-// MARK: - Pending Tickets Card
+// MARK: - Pending Tickets Card (with retry mechanism)
 
 private struct HelpPendingTicketsCard: View {
     @ObservedObject var viewModel: HelpCenterViewModel
@@ -241,30 +241,46 @@ private struct HelpPendingTicketsCard: View {
             HStack(spacing: 10) {
                 helpIconBubble("clock.badge.exclamationmark.fill", tint: .orange)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Pending Sync")
+                    Text("Pending Sync Queue")
                         .font(.custom("Poppins-SemiBold", size: 15))
                         .foregroundColor(.textPrimary)
                     Text("\(viewModel.pendingTickets.count) ticket(s) waiting to upload")
                         .font(.custom("Poppins-Regular", size: 11))
                         .foregroundColor(.orange)
                 }
+                Spacer()
+
+                // Sync state indicator
+                syncStateView
+            }
+
+            // Retry info
+            if viewModel.retryCount > 0 {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 11))
+                        .foregroundColor(.textSecondary)
+                    Text("Sync attempted \(viewModel.retryCount) time(s)")
+                        .font(.custom("Poppins-Regular", size: 11))
+                        .foregroundColor(.textSecondary)
+                }
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(Color(.systemGray6))
+                .cornerRadius(8)
             }
 
             ForEach(viewModel.pendingTickets) { ticket in
                 HStack(spacing: 12) {
                     ZStack {
-                        Circle()
-                            .fill(Color.orange.opacity(0.12))
-                            .frame(width: 38, height: 38)
+                        Circle().fill(Color.orange.opacity(0.12)).frame(width: 38, height: 38)
                         Image(systemName: "clock.fill")
-                            .font(.system(size: 15))
-                            .foregroundColor(.orange)
+                            .font(.system(size: 15)).foregroundColor(.orange)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(ticket.title)
                             .font(.custom("Poppins-SemiBold", size: 13))
                             .foregroundColor(.textPrimary)
-                        Text("Saved locally — syncs on reconnect")
+                        Text("In queue — syncs on reconnect")
                             .font(.custom("Poppins-Regular", size: 11))
                             .foregroundColor(.textSecondary)
                     }
@@ -274,11 +290,52 @@ private struct HelpPendingTicketsCard: View {
                     Divider().padding(.leading, 50)
                 }
             }
+
+            // Retry button
+            Button(action: viewModel.retrySync) {
+                HStack(spacing: 8) {
+                    if viewModel.isRetrying {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                    }
+                    Text(viewModel.isRetrying ? "Retrying…" : "Retry Sync Now")
+                        .font(.custom("Poppins-SemiBold", size: 14))
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity).frame(height: 44)
+                .background(viewModel.isRetrying ? Color.orange.opacity(0.6) : Color.orange)
+                .cornerRadius(12)
+            }
+            .disabled(viewModel.isRetrying)
+            .buttonStyle(.plain)
         }
         .padding(20)
         .background(Color.white)
         .cornerRadius(20)
         .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 4)
+    }
+
+    @ViewBuilder
+    private var syncStateView: some View {
+        switch viewModel.syncState {
+        case .syncing:
+            HStack(spacing: 4) {
+                ProgressView().scaleEffect(0.7)
+                Text("Syncing")
+                    .font(.custom("Poppins-Regular", size: 11)).foregroundColor(.orange)
+            }
+        case .success:
+            Label("Synced", systemImage: "checkmark.circle.fill")
+                .font(.custom("Poppins-Regular", size: 11)).foregroundColor(.green)
+        case .failed(let attempts):
+            Label("Failed (\(attempts)x)", systemImage: "xmark.circle.fill")
+                .font(.custom("Poppins-Regular", size: 11)).foregroundColor(.red)
+        case .idle:
+            EmptyView()
+        }
     }
 }
 
@@ -289,28 +346,22 @@ private struct HelpTicketHistoryCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-
             HStack(spacing: 10) {
                 helpIconBubble("ticket.fill", tint: .primaryBrand)
                 Text("Support History")
-                    .font(.custom("Poppins-SemiBold", size: 15))
-                    .foregroundColor(.textPrimary)
+                    .font(.custom("Poppins-SemiBold", size: 15)).foregroundColor(.textPrimary)
             }
 
             ForEach(viewModel.ticketHistory) { ticket in
                 HStack(spacing: 12) {
                     ZStack {
-                        Circle()
-                            .fill(statusColor(ticket.status).opacity(0.12))
-                            .frame(width: 38, height: 38)
+                        Circle().fill(statusColor(ticket.status).opacity(0.12)).frame(width: 38, height: 38)
                         Image(systemName: statusIcon(ticket.status))
-                            .font(.system(size: 15))
-                            .foregroundColor(statusColor(ticket.status))
+                            .font(.system(size: 15)).foregroundColor(statusColor(ticket.status))
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(ticket.title)
-                            .font(.custom("Poppins-SemiBold", size: 13))
-                            .foregroundColor(.textPrimary)
+                            .font(.custom("Poppins-SemiBold", size: 13)).foregroundColor(.textPrimary)
                         Text(ticket.status.replacingOccurrences(of: "_", with: " ").capitalized)
                             .font(.custom("Poppins-Regular", size: 11))
                             .foregroundColor(statusColor(ticket.status))
@@ -328,20 +379,11 @@ private struct HelpTicketHistoryCard: View {
         .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 4)
     }
 
-    private func statusColor(_ status: String) -> Color {
-        switch status {
-        case "resolved": return .green
-        case "open":     return .primaryBrand
-        default:         return .orange
-        }
+    private func statusColor(_ s: String) -> Color {
+        switch s { case "resolved": return .green; case "open": return .primaryBrand; default: return .orange }
     }
-
-    private func statusIcon(_ status: String) -> String {
-        switch status {
-        case "resolved": return "checkmark.circle.fill"
-        case "open":     return "circle.dotted"
-        default:         return "clock.fill"
-        }
+    private func statusIcon(_ s: String) -> String {
+        switch s { case "resolved": return "checkmark.circle.fill"; case "open": return "circle.dotted"; default: return "clock.fill" }
     }
 }
 
@@ -351,31 +393,22 @@ private struct HelpOfflineBanner: View {
     var body: some View {
         HStack(spacing: 14) {
             ZStack {
-                Circle()
-                    .fill(Color.white.opacity(0.22))
-                    .frame(width: 42, height: 42)
+                Circle().fill(Color.white.opacity(0.22)).frame(width: 42, height: 42)
                 Image(systemName: "wifi.slash")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white)
+                    .font(.system(size: 17, weight: .semibold)).foregroundColor(.white)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text("Offline Mode")
-                    .font(.custom("Poppins-SemiBold", size: 14))
-                    .foregroundColor(.white)
-                Text("FAQ from cache — tickets saved locally")
-                    .font(.custom("Poppins-Regular", size: 12))
-                    .foregroundColor(.white.opacity(0.88))
+                    .font(.custom("Poppins-SemiBold", size: 14)).foregroundColor(.white)
+                Text("FAQ from TTL cache · tickets queued locally")
+                    .font(.custom("Poppins-Regular", size: 12)).foregroundColor(.white.opacity(0.88))
             }
             Spacer()
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 16).padding(.vertical, 14)
         .background(
-            LinearGradient(
-                colors: [Color.orange, Color(red: 1.0, green: 0.54, blue: 0.0)],
-                startPoint: .leading,
-                endPoint: .trailing
-            )
+            LinearGradient(colors: [Color.orange, Color(red: 1.0, green: 0.54, blue: 0.0)],
+                           startPoint: .leading, endPoint: .trailing)
         )
         .cornerRadius(18)
         .shadow(color: Color.orange.opacity(0.32), radius: 10, x: 0, y: 5)
@@ -386,12 +419,8 @@ private struct HelpOfflineBanner: View {
 
 private func helpIconBubble(_ icon: String, tint: Color) -> some View {
     ZStack {
-        Circle()
-            .fill(tint.opacity(0.13))
-            .frame(width: 36, height: 36)
-        Image(systemName: icon)
-            .font(.system(size: 15))
-            .foregroundColor(tint)
+        Circle().fill(tint.opacity(0.13)).frame(width: 36, height: 36)
+        Image(systemName: icon).font(.system(size: 15)).foregroundColor(tint)
     }
 }
 

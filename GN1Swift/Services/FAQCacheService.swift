@@ -9,48 +9,52 @@ struct FAQItem: Codable, Identifiable {
     var category: String
 }
 
-// MARK: - Cache
+// MARK: - TTL Cache  (NO NSCache — pure in-memory struct with timestamp)
+//
+// Decision: NSCache was deliberately avoided here to show a DIFFERENT caching
+// strategy from Wallet (which uses NSCache). This cache uses a plain array +
+// timestamp checked on every read.
+//
+// TTL: 30 minutes — FAQ content changes infrequently; a 30-min window reduces
+// Firebase reads without showing stale critical data.
+//
+// On expiry: returns nil → caller reloads from Firestore and calls setFAQItems().
 
-// NSCache for FAQ items — TTL 10 minutes
 final class FAQCacheService {
     static let shared = FAQCacheService()
+    private init() {}
 
-    private let cache = NSCache<NSString, NSArray>()
-    private var timestamp: Date?
-    private let ttl: TimeInterval = 600 // 10 minutes
-    private let key = "faq_all" as NSString
+    private var cachedItems: [FAQItem] = []
+    private var cachedAt:    Date?
+    private let ttl: TimeInterval = 1800 // 30 minutes
 
-    private init() {
-        cache.countLimit = 50
+    var isExpired: Bool {
+        guard let ts = cachedAt else { return true }
+        return Date().timeIntervalSince(ts) >= ttl
+    }
+
+    var minutesUntilExpiry: Int {
+        guard let ts = cachedAt, !isExpired else { return 0 }
+        let remaining = ttl - Date().timeIntervalSince(ts)
+        return max(0, Int(remaining / 60))
     }
 
     func faqItems() -> [FAQItem]? {
-        guard let ts = timestamp, Date().timeIntervalSince(ts) < ttl,
-              let arr = cache.object(forKey: key) else {
-            evict()
+        guard !isExpired, !cachedItems.isEmpty else {
+            cachedItems = []
+            cachedAt    = nil
             return nil
         }
-        return arr.compactMap { $0 as? NSDictionary }.map { d in
-            FAQItem(
-                id:       d["id"]       as? String ?? "",
-                question: d["question"] as? String ?? "",
-                answer:   d["answer"]   as? String ?? "",
-                category: d["category"] as? String ?? "General"
-            )
-        }
+        return cachedItems
     }
 
     func setFAQItems(_ items: [FAQItem]) {
-        let arr = items.map { item -> NSDictionary in
-            ["id": item.id, "question": item.question,
-             "answer": item.answer, "category": item.category]
-        } as NSArray
-        cache.setObject(arr, forKey: key)
-        timestamp = Date()
+        cachedItems = items
+        cachedAt    = Date()
     }
 
-    private func evict() {
-        cache.removeObject(forKey: key)
-        timestamp = nil
+    func invalidate() {
+        cachedItems = []
+        cachedAt    = nil
     }
 }

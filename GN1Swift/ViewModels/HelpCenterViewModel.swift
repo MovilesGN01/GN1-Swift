@@ -3,18 +3,42 @@ import Combine
 import FirebaseFirestore
 import Network
 
+// MARK: - Sync state for retry UI
+
+enum TicketSyncState {
+    case idle
+    case syncing
+    case success
+    case failed(attempts: Int)
+}
+
+// MARK: - HelpCenterViewModel
+//
+// Multi-threading strategy: Task + async let  (concurrent FAQ + history + pending load)
+// Cache strategy:           TTL Cache (FAQCacheService — NO NSCache, pure struct + timestamp, 30 min TTL)
+// Local storage:            JSON queue file (pending_support.json via SupportTicketService)
+// Eventual connectivity:    NWPathMonitor + manual retry with retryCount tracking
+
 final class HelpCenterViewModel: ObservableObject {
 
     // MARK: - Published State
 
-    @Published var faqItems: [FAQItem] = []
+    @Published var faqItems:       [FAQItem]       = []
     @Published var pendingTickets: [SupportTicket] = []
-    @Published var ticketHistory: [SupportTicket] = []
-    @Published var isOffline: Bool = false
-    @Published var isLoading: Bool = false
-    @Published var ticketTitle: String = ""
+    @Published var ticketHistory:  [SupportTicket] = []
+    @Published var isOffline:  Bool   = false
+    @Published var isLoading:  Bool   = false
+    @Published var isRetrying: Bool   = false
+    @Published var retryCount: Int    = 0
+    @Published var syncState:  TicketSyncState = .idle
+    @Published var ticketTitle:       String = ""
     @Published var ticketDescription: String = ""
-    @Published var showTicketSuccess: Bool = false
+    @Published var showTicketSuccess: Bool   = false
+
+    var cacheExpiresIn: String {
+        let mins = FAQCacheService.shared.minutesUntilExpiry
+        return mins > 0 ? "FAQ cache: \(mins) min left" : "FAQ cache expired"
+    }
 
     // MARK: - Services
 
@@ -33,116 +57,111 @@ final class HelpCenterViewModel: ObservableObject {
     deinit { monitor.cancel() }
 
     // =========================================================================
-    // MARK: - Eventual Connectivity (NWPathMonitor)
-    // =========================================================================
-    // Reconnect → sync pending tickets + reload help center
+    // MARK: - Eventual Connectivity — NWPathMonitor
+    // On reconnect: sync pending ticket queue + reload help center.
     // =========================================================================
 
     private func startNetworkMonitoring() {
         monitor.pathUpdateHandler = { [weak self] path in
-            guard let self = self else { return }
+            guard let self else { return }
             let online = path.status == .satisfied
             Task { @MainActor in
-                if online && self.wasOffline {
-                    self.isOffline = false
-                    self.ticketService.syncPendingTickets()
+                let wasDown    = self.wasOffline
+                self.wasOffline = !online
+                self.isOffline  = !online
+                if online && wasDown {
+                    self.syncState = .syncing
+                    self.ticketService.syncPendingTickets { success in
+                        self.pendingTickets = self.ticketService.loadPendingTickets()
+                        self.syncState = success
+                            ? .success
+                            : .failed(attempts: self.retryCount)
+                    }
                     self.loadHelpCenter()
                 }
-                self.wasOffline = !online
             }
         }
         monitor.start(queue: DispatchQueue.global(qos: .background))
     }
 
     // =========================================================================
-    // MARK: - Load All — Simultaneous async let fetches
-    // =========================================================================
-    // Serves FAQ from cache immediately, then fires 3 concurrent Firebase fetches
+    // MARK: - Load Help Center (public entry point)
+    // Spins up a Task so callers (View .onAppear) don't need an async context.
+    // Inside the Task, async let fires all fetches concurrently.
     // =========================================================================
 
     func loadHelpCenter() {
+        Task { await performLoad() }
+    }
+
+    private func performLoad() async {
         guard let userId = UserSession.shared.userId else { return }
-        isLoading = true
 
-        let isOnline = !wasOffline
-        analytics.helpOpened(online: isOnline)
+        await MainActor.run {
+            isLoading = true
+            let isOnline = !wasOffline
+            analytics.helpOpened(online: isOnline)
 
-        // Show cached FAQ immediately if TTL still valid
-        if let cached = faqCache.faqItems() {
-            faqItems = cached
-            analytics.faqLoadedFromCache(cacheHit: true)
-        } else {
-            analytics.faqLoadedFromCache(cacheHit: false)
+            // Serve TTL-cached FAQ immediately while network loads
+            if let cached = faqCache.faqItems() {
+                faqItems = cached
+                analytics.faqLoadedFromCache(cacheHit: true)
+            } else {
+                analytics.faqLoadedFromCache(cacheHit: false)
+            }
+            pendingTickets = ticketService.loadPendingTickets()
         }
-        pendingTickets = ticketService.loadPendingTickets()
 
-        Task { [weak self] in
-            guard let self = self else { return }
+        do {
+            // async let starts all three fetches simultaneously — not sequential
+            async let faqFetch     = fetchFAQ()
+            async let historyFetch = fetchTicketHistory(userId: userId)
+            async let pendingFetch = fetchPendingLocal()
 
-            do {
-                // Three concurrent fetches — all start simultaneously
-                async let faqFetch     = self.fetchFAQ()
-                async let pendingFetch = self.fetchPendingLocal()
-                async let historyFetch = self.fetchTicketHistory(userId: userId)
+            let (newFAQ, history, pending) = try await (faqFetch, historyFetch, pendingFetch)
+            faqCache.setFAQItems(newFAQ)
 
-                // Await all results (they ran in parallel)
-                let newFAQ     = try await faqFetch
-                let newPending = try await pendingFetch
-                let history    = try await historyFetch
+            await MainActor.run {
+                faqItems       = newFAQ
+                ticketHistory  = history
+                pendingTickets = pending
+                isOffline      = false
+                isLoading      = false
+            }
 
-                self.faqCache.setFAQItems(newFAQ)
-
-                await MainActor.run {
-                    self.faqItems       = newFAQ
-                    self.pendingTickets = newPending
-                    self.ticketHistory  = history
-                    self.isOffline      = false
-                    self.isLoading      = false
-                    self.recordFAQUsage()
-                }
-
-            } catch {
-                await MainActor.run {
-                    // Partial failure: show whatever is available, never blank
-                    if self.faqItems.isEmpty { self.faqItems = Self.defaultFAQ() }
-                    self.isOffline = true
-                    self.isLoading = false
-                }
+        } catch {
+            await MainActor.run {
+                if faqItems.isEmpty { faqItems = Self.defaultFAQ() }
+                isOffline = true
+                isLoading = false
             }
         }
     }
 
-    // MARK: - Firestore Fetches
+    // =========================================================================
+    // MARK: - Retry Sync (manual — triggered by user via Retry button)
+    // retryCount tracks total attempts so UI can display "Attempted X times".
+    // =========================================================================
 
-    private func fetchFAQ() async throws -> [FAQItem] {
-        try await withCheckedThrowingContinuation { cont in
-            db.collection("faq")
-                .limit(to: 30)
-                .getDocuments { snap, err in
-                    if let err { cont.resume(throwing: err); return }
-                    let items = snap?.documents.map { doc -> FAQItem in
-                        let d = doc.data()
-                        return FAQItem(
-                            id:       doc.documentID,
-                            question: d["question"] as? String ?? "",
-                            answer:   d["answer"]   as? String ?? "",
-                            category: d["category"] as? String ?? "General"
-                        )
-                    } ?? []
-                    cont.resume(returning: items.isEmpty ? Self.defaultFAQ() : items)
-                }
+    func retrySync() {
+        guard !isRetrying else { return }
+        isRetrying = true
+        retryCount += 1
+        syncState  = .syncing
+
+        ticketService.syncPendingTickets { [weak self] success in
+            guard let self else { return }
+            self.isRetrying    = false
+            self.pendingTickets = self.ticketService.loadPendingTickets()
+            self.syncState = success
+                ? .success
+                : .failed(attempts: self.retryCount)
         }
     }
 
-    private func fetchPendingLocal() async throws -> [SupportTicket] {
-        ticketService.loadPendingTickets()
-    }
-
-    private func fetchTicketHistory(userId: String) async throws -> [SupportTicket] {
-        try await ticketService.fetchTicketHistory(userId: userId)
-    }
-
-    // MARK: - Create Ticket (Offline-capable)
+    // =========================================================================
+    // MARK: - Create Ticket (offline-capable)
+    // =========================================================================
 
     func submitTicket() {
         let trimmed = ticketTitle.trimmingCharacters(in: .whitespaces)
@@ -155,42 +174,62 @@ final class HelpCenterViewModel: ObservableObject {
         showTicketSuccess = true
 
         analytics.ticketCreated(createdOffline: isOffline, online: !isOffline)
-        if !isOffline { ticketService.syncPendingTickets() }
-        recordTicketCreation()
+
+        if !isOffline {
+            syncState = .syncing
+            ticketService.syncPendingTickets { [weak self] success in
+                guard let self else { return }
+                self.pendingTickets = self.ticketService.loadPendingTickets()
+                self.syncState = success ? .success : .failed(attempts: self.retryCount)
+            }
+        }
     }
 
-    // MARK: - Default FAQ (Shown when offline or Firestore empty)
+    // MARK: - Firestore Fetches
+
+    private func fetchFAQ() async throws -> [FAQItem] {
+        try await withCheckedThrowingContinuation { cont in
+            db.collection("faq").limit(to: 30).getDocuments { snap, err in
+                if let err { cont.resume(throwing: err); return }
+                let items = snap?.documents.map { doc -> FAQItem in
+                    let d = doc.data()
+                    return FAQItem(id: doc.documentID,
+                                   question: d["question"] as? String ?? "",
+                                   answer:   d["answer"]   as? String ?? "",
+                                   category: d["category"] as? String ?? "General")
+                } ?? []
+                cont.resume(returning: items.isEmpty ? Self.defaultFAQ() : items)
+            }
+        }
+    }
+
+    private func fetchPendingLocal() async throws -> [SupportTicket] {
+        ticketService.loadPendingTickets()
+    }
+
+    private func fetchTicketHistory(userId: String) async throws -> [SupportTicket] {
+        try await ticketService.fetchTicketHistory(userId: userId)
+    }
+
+    // MARK: - Default FAQ (offline / empty Firestore fallback)
 
     static func defaultFAQ() -> [FAQItem] {
         [
             FAQItem(id: "1", question: "How do I book a ride?",
-                    answer: "Go to the Home tab and tap 'Find a Ride' to search for available rides.",
+                    answer: "Go to the Home tab and tap 'Find a Ride'.",
                     category: "Rides"),
             FAQItem(id: "2", question: "How do I become a driver?",
-                    answer: "Register with your vehicle details in your profile settings under the Driver section.",
+                    answer: "Register with your vehicle details in Profile → Driver section.",
                     category: "Account"),
             FAQItem(id: "3", question: "How do I add funds to my wallet?",
-                    answer: "Go to Profile → Wallet and select your preferred payment method.",
+                    answer: "Go to Profile → Wallet, tap 'Add Funds', and choose an amount and payment method.",
                     category: "Wallet"),
             FAQItem(id: "4", question: "What happens when I am offline?",
-                    answer: "The app uses cached data. Your support tickets are saved locally and sync when you reconnect.",
+                    answer: "The app uses a TTL cache for FAQ (30 min). Support tickets are saved in a local queue and sync automatically when you reconnect.",
                     category: "General"),
             FAQItem(id: "5", question: "How is my rating calculated?",
-                    answer: "Your rating is the average score from all your completed rides as rated by other users.",
+                    answer: "Your rating is the average score from all completed rides.",
                     category: "Account"),
         ]
-    }
-
-    // MARK: - Value Proposition Metrics
-
-    private func recordFAQUsage() {
-        let d = UserDefaults.standard
-        d.set(d.integer(forKey: "metric_faqOpenCount") + 1,
-              forKey: "metric_faqOpenCount")
-    }
-
-    private func recordTicketCreation() {
-        UserDefaults.standard.set(Date().timeIntervalSince1970,
-                                  forKey: "metric_lastTicketCreatedAt")
     }
 }

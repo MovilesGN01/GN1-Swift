@@ -13,19 +13,22 @@ struct SupportTicket: Codable, Identifiable {
 }
 
 // MARK: - Service
+//
+// Local storage strategy: JSON queue file (pending_support.json)
+// Offline: ticket saved to JSON queue with status "pending_sync"
+// Online:  syncPendingTickets() pushes queue to Firestore, clears synced entries
+// Retry:   caller passes a completion(Bool) to know if sync succeeded
 
-// Offline-capable support ticket management:
-//   Create offline → save to pending_support.json → sync to Firebase on reconnect
 final class SupportTicketService {
     static let shared = SupportTicketService()
+    private init() {}
 
     private let db = Firestore.firestore()
 
     private var pendingURL: URL? {
         FileManager.default
             .urls(for: .documentDirectory, in: .userDomainMask)
-            .first?
-            .appendingPathComponent("pending_support.json")
+            .first?.appendingPathComponent("pending_support.json")
     }
 
     // MARK: - Create (works offline)
@@ -46,16 +49,26 @@ final class SupportTicketService {
     }
 
     // MARK: - Sync Pending to Firebase
+    // Uses DispatchGroup so the completion fires only after ALL tickets are attempted.
 
-    func syncPendingTickets() {
-        guard let userId = UserSession.shared.userId else { return }
+    func syncPendingTickets(completion: ((Bool) -> Void)? = nil) {
+        guard let userId = UserSession.shared.userId else {
+            completion?(false)
+            return
+        }
         let pending = loadPendingTickets()
-        guard !pending.isEmpty else { return }
+        guard !pending.isEmpty else {
+            completion?(true)
+            return
+        }
 
+        let group    = DispatchGroup()
         var syncedIds: [String] = []
+        var anyFailure = false
 
         for ticket in pending {
             let syncStart = Date()
+            group.enter()
             db.collection("support_tickets")
                 .document(userId)
                 .collection("tickets")
@@ -68,11 +81,16 @@ final class SupportTicketService {
                 ]) { [weak self] err in
                     let syncTime = Date().timeIntervalSince(syncStart) * 1000
                     let success  = err == nil
+                    if !success { anyFailure = true }
                     AnalyticsService.shared.pendingTicketSynced(syncSuccess: success, syncTime: syncTime)
-                    guard success else { return }
-                    syncedIds.append(ticket.id)
+                    if success { syncedIds.append(ticket.id) }
                     self?.removeSyncedTickets(syncedIds)
+                    group.leave()
                 }
+        }
+
+        group.notify(queue: .main) {
+            completion?(!anyFailure)
         }
     }
 
@@ -103,18 +121,16 @@ final class SupportTicketService {
         }
     }
 
-    // MARK: - Local JSON Persistence
+    // MARK: - Local JSON Queue
 
     func loadPendingTickets() -> [SupportTicket] {
-        guard let url = pendingURL,
-              let data = try? Data(contentsOf: url),
-              let tickets = try? JSONDecoder().decode([SupportTicket].self, from: data)
-        else { return [] }
-        return tickets
+        guard let url  = pendingURL,
+              let data = try? Data(contentsOf: url) else { return [] }
+        return (try? JSONDecoder().decode([SupportTicket].self, from: data)) ?? []
     }
 
     private func savePending(_ tickets: [SupportTicket]) {
-        guard let url = pendingURL,
+        guard let url  = pendingURL,
               let data = try? JSONEncoder().encode(tickets) else { return }
         try? data.write(to: url, options: .atomic)
     }
