@@ -494,6 +494,8 @@ private struct AddFundsSheet: View {
 
     @State private var selectedAmount: Double?  = nil
     @State private var selectedMethod: String   = "Cash"
+    @State private var selectedCardId: String?  = nil   // existing saved card
+    @State private var addingNewCard:  Bool     = false  // show new card form
     @State private var holderName:  String = ""
     @State private var cardNumber:  String = ""
     @State private var expiration:  String = ""
@@ -545,8 +547,10 @@ private struct AddFundsSheet: View {
 
                         ForEach(methods, id: \.self) { method in
                             Button {
-                                selectedMethod = method
-                                errorMsg = ""
+                                selectedMethod  = method
+                                selectedCardId = nil
+                                addingNewCard  = false
+                                errorMsg       = ""
                             } label: {
                                 HStack(spacing: 12) {
                                     Image(systemName: methodIcon(method))
@@ -569,10 +573,22 @@ private struct AddFundsSheet: View {
                         }
                     }
 
-                    // Card fields
+                    // Saved cards selector + new card form
                     if selectedMethod == "Credit Card" || selectedMethod == "Debit Card" {
-                        CardFieldsSection(holderName: $holderName, cardNumber: $cardNumber,
-                                          expiration: $expiration, cvv: $cvv, saveCard: $saveCard)
+                        let matchingCards = viewModel.cards.filter { $0.type == selectedMethod }
+
+                        if !matchingCards.isEmpty {
+                            SavedCardSelector(
+                                cards: matchingCards,
+                                selectedCardId: $selectedCardId,
+                                addingNewCard: $addingNewCard
+                            )
+                        }
+
+                        if addingNewCard || matchingCards.isEmpty {
+                            CardFieldsSection(holderName: $holderName, cardNumber: $cardNumber,
+                                              expiration: $expiration, cvv: $cvv, saveCard: $saveCard)
+                        }
                     }
 
                     // Nequi phone field
@@ -640,23 +656,27 @@ private struct AddFundsSheet: View {
         guard let amount = selectedAmount else { return }
         errorMsg = ""
 
-        // Validate based on method
         if selectedMethod == "Credit Card" || selectedMethod == "Debit Card" {
-            guard !holderName.trimmingCharacters(in: .whitespaces).isEmpty else {
-                errorMsg = "Please enter the card holder name."; return
-            }
-            guard WalletViewModel.validateCardNumber(cardNumber) else {
-                errorMsg = "Card number must be 16 digits."; return
-            }
-            guard WalletViewModel.validateExpiration(expiration) else {
-                errorMsg = "Expiration must be MM/YY format."; return
-            }
-            guard WalletViewModel.validateCVV(cvv) else {
-                errorMsg = "CVV must be 3 digits."; return
-            }
-            if saveCard {
-                viewModel.addCard(holderName: holderName, cardNumber: cardNumber,
-                                  expiration: expiration, type: selectedMethod)
+            if selectedCardId != nil {
+                // Existing saved card — no validation needed
+            } else {
+                // New card — validate all fields
+                guard !holderName.trimmingCharacters(in: .whitespaces).isEmpty else {
+                    errorMsg = "Please enter the card holder name."; return
+                }
+                guard WalletViewModel.validateCardNumber(cardNumber) else {
+                    errorMsg = "Card number must be 16 digits."; return
+                }
+                guard WalletViewModel.validateExpiration(expiration) else {
+                    errorMsg = "Expiration must be MM/YY format."; return
+                }
+                guard WalletViewModel.validateCVV(cvv) else {
+                    errorMsg = "CVV must be 3 digits."; return
+                }
+                if saveCard {
+                    viewModel.addCard(holderName: holderName, cardNumber: cardNumber,
+                                      expiration: expiration, type: selectedMethod)
+                }
             }
         }
 
@@ -677,6 +697,93 @@ private struct AddFundsSheet: View {
         case "Nequi":       return "phone.fill"
         case "Cash":        return "dollarsign.circle.fill"
         default:            return "creditcard"
+        }
+    }
+}
+
+// MARK: - Saved Card Selector Sub-View
+
+private struct SavedCardSelector: View {
+    let cards: [SavedCard]
+    @Binding var selectedCardId: String?
+    @Binding var addingNewCard: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Saved Cards")
+                .font(.custom("Poppins-SemiBold", size: 14))
+                .foregroundColor(.textPrimary)
+
+            ForEach(cards) { card in
+                Button {
+                    selectedCardId = card.id
+                    addingNewCard  = false
+                } label: {
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(selectedCardId == card.id
+                                      ? Color.primaryBrand
+                                      : Color(.systemGray5))
+                                .frame(width: 22, height: 22)
+                            if selectedCardId == card.id {
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(card.maskedNumber)
+                                .font(.custom("Poppins-SemiBold", size: 13))
+                                .foregroundColor(.textPrimary)
+                            Text("\(card.holderName)  ·  \(card.expiration)")
+                                .font(.custom("Poppins-Regular", size: 11))
+                                .foregroundColor(.textSecondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14).padding(.vertical, 12)
+                    .background(selectedCardId == card.id
+                                ? Color.primaryBrand.opacity(0.08)
+                                : Color(.systemGray6))
+                    .cornerRadius(12)
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Add new card option
+            Button {
+                selectedCardId = nil
+                addingNewCard  = true
+            } label: {
+                HStack(spacing: 10) {
+                    ZStack {
+                        Circle()
+                            .fill(addingNewCard ? Color.primaryBrand : Color(.systemGray5))
+                            .frame(width: 22, height: 22)
+                        Image(systemName: addingNewCard ? "checkmark" : "plus")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(addingNewCard ? .white : .textSecondary)
+                    }
+                    Text("Add a new card")
+                        .font(.custom("Poppins-Regular", size: 13))
+                        .foregroundColor(.primaryBrand)
+                    Spacer()
+                }
+                .padding(.horizontal, 14).padding(.vertical, 12)
+                .background(addingNewCard ? Color.primaryBrand.opacity(0.08) : Color(.systemGray6))
+                .cornerRadius(12)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(16)
+        .background(Color(.systemGray6).opacity(0.5))
+        .cornerRadius(14)
+        .onAppear {
+            // Auto-select the first saved card when the section appears
+            if selectedCardId == nil && !addingNewCard {
+                selectedCardId = cards.first?.id
+            }
         }
     }
 }
